@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Materealized</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #viewport {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+    }
+
+    #world {
+      position: absolute;
+      transform-origin: 0 0;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(11, var(--cell-size));
+      grid-template-rows: repeat(5, var(--cell-size));
+    }
+
+    :root {
+      --cell-size: 500px;
+      --padding: 16px;
+    }
+
+    .cell {
+      width: var(--cell-size);
+      height: var(--cell-size);
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: visible;
+    }
+
+    /* ── PROMPT LABEL inside cell ── */
+    .cell-prompt {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.65);
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      z-index: 3;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    /* ── DOTS ── */
+    .cell-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      transition: opacity 0.4s ease, background 0.4s ease;
+    }
+
+    .cell-dot.center {
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      cursor: pointer;
+    }
+
+    .cell-dot.center::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      animation: dotPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+      50% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+    }
+
+    .cell-dot.active {
+      background: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      animation: neighborPulse 3s ease-in-out infinite;
+    }
+
+    .cell-dot.active:hover {
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    @keyframes neighborPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.85; }
+    }
+
+    .cell-dot.recording {
+      background: #ff3333 !important;
+      animation: recordBlink 1.2s ease-in-out infinite !important;
+    }
+
+    .cell-dot.recording::after {
+      background: rgba(255, 50, 50, 0.08) !important;
+      animation: dotPulseRed 1.5s ease-in-out infinite !important;
+    }
+
+    @keyframes recordBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    @keyframes dotPulseRed {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+      50% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+    }
+
+    .cell-dot.filled { display: none; }
+
+    /* ── CELL IMAGE ── */
+    .cell-image {
+      position: absolute;
+      top: 20%;
+      left: 20%;
+      width: 60%;
+      height: 60%;
+      object-fit: contain;
+      border-radius: 2px;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      z-index: 1;
+    }
+
+    .cell-image.loaded { opacity: 1; }
+
+    .cell-image.masked {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    .cell-particles {
+      position: absolute;
+      top: -25%; left: -25%;
+      width: 150%; height: 150%;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* ── HOVER LABEL ── */
+    #hover-label {
+      position: fixed;
+      z-index: 100;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.65);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      transform: translate(-50%, -50%);
+    }
+
+    #hover-label.visible { opacity: 1; }
+    #hover-label.red { color: #ff3333; }
+
+    /* ── LOADING ── */
+    #loading-text {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.85rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 0.12em;
+      z-index: 60;
+      display: none;
+    }
+
+    #loading-text.active {
+      display: block;
+      animation: loadPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes loadPulse {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.7; }
+    }
+
+    #status {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.25);
+      letter-spacing: 0.12em;
+      z-index: 60;
+    }
+
+    #text-input {
+      position: fixed;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(420px, 80vw);
+      padding: 10px 16px;
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      outline: none;
+      z-index: 60;
+      transition: border-color 0.3s ease, opacity 0.3s ease;
+    }
+
+    #text-input::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+      font-weight: 300;
+    }
+
+    #text-input:focus {
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    #text-input.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ── CONTROL PANEL ── */
+    #controls {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: 0.06em;
+      backdrop-filter: blur(10px);
+      width: 230px;
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+    }
+
+    #controls h3 {
+      font-size: 0.55rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: rgba(255, 255, 255, 0.35);
+      margin: 10px 0 6px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    #controls h3:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .ctrl-row label {
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.58rem;
+    }
+
+    .ctrl-row .val {
+      font-family: monospace;
+      font-size: 0.58rem;
+      color: rgba(255, 255, 255, 0.4);
+      min-width: 36px;
+      text-align: right;
+    }
+
+    #controls input[type="range"] {
+      width: 100%;
+      margin-bottom: 6px;
+      height: 2px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 1px;
+      outline: none;
+    }
+
+    #controls input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="viewport">
+  <div id="world">
+    <div id="grid"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+
+<div id="controls">
+  <h3>Subject Particles</h3>
+  <div class="ctrl-row"><label>turbulence</label><span class="val" id="v-turb">0.30</span></div>
+  <input type="range" id="ctrl-turbulence" min="0" max="100" value="30" />
+  <div class="ctrl-row"><label>octaves</label><span class="val" id="v-oct">0.50</span></div>
+  <input type="range" id="ctrl-octaves" min="0" max="100" value="50" />
+  <div class="ctrl-row"><label>swirl</label><span class="val" id="v-swirl">0.30</span></div>
+  <input type="range" id="ctrl-swirl" min="0" max="100" value="30" />
+  <div class="ctrl-row"><label>feedback</label><span class="val" id="v-fb">0.00</span></div>
+  <input type="range" id="ctrl-feedback" min="0" max="100" value="0" />
+  <div class="ctrl-row"><label>particle size</label><span class="val" id="v-size">0.0030</span></div>
+  <input type="range" id="ctrl-size" min="1" max="50" value="30" />
+  <div class="ctrl-row"><label>count</label><span class="val" id="v-count">60000</span></div>
+
+  <h3>Image Mask</h3>
+  <div class="ctrl-row"><label>dissolve</label><span class="val" id="v-dissolve">0.50</span></div>
+  <input type="range" id="ctrl-dissolve" min="0" max="100" value="50" />
+
+  <h3>Cage Sphere</h3>
+  <div class="ctrl-row"><label>speed</label><span class="val" id="v-cage">0.15</span></div>
+  <input type="range" id="ctrl-cage" min="0" max="100" value="15" />
+  <div class="ctrl-row"><label>point size</label><span class="val" id="v-cagesize">0.006</span></div>
+  <input type="range" id="ctrl-cagesize" min="1" max="30" value="6" />
+  <div class="ctrl-row"><label>opacity</label><span class="val" id="v-cageopac">0.85</span></div>
+  <input type="range" id="ctrl-cageopac" min="0" max="100" value="85" />
+  <div class="ctrl-row"><label>count (rebuild)</label><span class="val" id="v-cagecount">80000</span></div>
+  <input type="range" id="ctrl-cagecount" min="5000" max="150000" value="80000" step="1000" />
+  <div class="ctrl-row"><label>radius (rebuild)</label><span class="val" id="v-radius">2.00</span></div>
+  <input type="range" id="ctrl-radius" min="100" max="350" value="200" />
+  <div class="ctrl-row"><label>stream</label><span class="val" id="v-stream">0.60</span></div>
+  <input type="range" id="ctrl-stream" min="0" max="100" value="60" />
+  <div class="ctrl-row"><label>clump</label><span class="val" id="v-clump">0.50</span></div>
+  <input type="range" id="ctrl-clump" min="0" max="100" value="50" />
+  <div class="ctrl-row"><label>pole density (rebuild)</label><span class="val" id="v-pole">0.50</span></div>
+  <input type="range" id="ctrl-pole" min="0" max="100" value="50" />
+  <button id="btn-rebuild-cage" style="width:100%;margin-top:6px;padding:5px;font-size:0.6rem;font-family:Inter,sans-serif;text-transform:uppercase;letter-spacing:0.1em;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:4px;color:rgba(255,255,255,0.5);cursor:pointer;">rebuild cage</button>
+</div>
+
+<div id="hover-label">[ RECORD ]</div>
+<div id="loading-text">materializing...</div>
+<input id="text-input" type="text" placeholder="type a memory and press enter..." autocomplete="off" />
+<div id="status"></div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ── SIMPLEX-LIKE 3D NOISE ──
+function noise3D(x, y, z) {
+  const p = x * 12.9898 + y * 78.233 + z * 45.164;
+  const s1 = Math.sin(x * 1.27 + y * 3.41 + z * 2.63) * 43758.5453;
+  const s2 = Math.sin(x * 2.91 + y * 1.73 + z * 4.19) * 23421.6312;
+  const s3 = Math.sin(x * 0.83 + y * 4.57 + z * 1.31) * 65432.1234;
+  return (
+    (s1 - Math.floor(s1)) * 0.5 +
+    (s2 - Math.floor(s2)) * 0.3 +
+    (s3 - Math.floor(s3)) * 0.2
+  ) - 0.5;
+}
+
+// ── CONTROLS ──
+const params = {
+  turbulence: 0.3,
+  octaves: 0.5,
+  swirl: 0.3,
+  feedback: 0,
+  particleSize: 0.003,
+  dissolve: 0.5,
+  cageSpeed: 0.15,
+  cageSize: 0.006,
+  cageOpacity: 0.85,
+  cageStream: 0.6,
+  cageClump: 0.5,
+  cageRadius: 2.0,
+  poleDensity: 0.5,
+};
+
+// Wire all sliders with value display
+function wire(id, param, divisor, valId, fmt) {
+  const el = document.getElementById(id);
+  const valEl = document.getElementById(valId);
+  el.addEventListener('input', () => {
+    const v = el.value / divisor;
+    params[param] = v;
+    valEl.textContent = fmt ? fmt(v) : v.toFixed(2);
+  });
+}
+wire('ctrl-turbulence', 'turbulence', 100, 'v-turb');
+wire('ctrl-octaves', 'octaves', 100, 'v-oct');
+wire('ctrl-swirl', 'swirl', 100, 'v-swirl');
+wire('ctrl-feedback', 'feedback', 100, 'v-fb');
+wire('ctrl-size', 'particleSize', 10000, 'v-size', v => v.toFixed(4));
+wire('ctrl-dissolve', 'dissolve', 100, 'v-dissolve');
+wire('ctrl-cage', 'cageSpeed', 100, 'v-cage');
+wire('ctrl-radius', 'cageRadius', 100, 'v-radius');
+wire('ctrl-cageopac', 'cageOpacity', 100, 'v-cageopac');
+wire('ctrl-stream', 'cageStream', 100, 'v-stream');
+wire('ctrl-clump', 'cageClump', 100, 'v-clump');
+wire('ctrl-pole', 'poleDensity', 100, 'v-pole');
+
+// Cage point size (special — updates material directly)
+const ctrlCageSize = document.getElementById('ctrl-cagesize');
+ctrlCageSize.addEventListener('input', () => {
+  params.cageSize = ctrlCageSize.value / 1000;
+  document.getElementById('v-cagesize').textContent = params.cageSize.toFixed(3);
+});
+
+// Cage count display
+const ctrlCageCount = document.getElementById('ctrl-cagecount');
+ctrlCageCount.addEventListener('input', () => {
+  document.getElementById('v-cagecount').textContent = ctrlCageCount.value;
+});
+
+// Rebuild cage button — regenerates cage particles for all active cells
+document.getElementById('btn-rebuild-cage').addEventListener('click', () => {
+  for (const key in cellRenderers) {
+    const cr = cellRenderers[key];
+    if (cr.cagePoints && cr.cagePoints.userData.rebuild) {
+      cr.cagePoints.userData.rebuild();
+    }
+  }
+});
+
+// Stop controls from triggering pan/zoom
+const controlsEl = document.getElementById('controls');
+controlsEl.addEventListener('mousedown', (e) => e.stopPropagation());
+controlsEl.addEventListener('wheel', (e) => e.stopPropagation());
+
+const COLS = 11;
+const ROWS = 5;
+const CELL_SIZE = 500;
+const CENTER_COL = 5;
+const CENTER_ROW = 2;
+
+// ── STATE ──
+const filledCells = new Set();
+let activeCellKey = `${CENTER_COL},${CENTER_ROW}`;
+let isGenerating = false;
+let isRecording = false;
+
+// Pan/zoom
+let scale = 1;
+let panX = 0;
+let panY = 0;
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let startPanX = 0;
+let startPanY = 0;
+
+// ── DOM ──
+const viewport = document.getElementById('viewport');
+const world = document.getElementById('world');
+const grid = document.getElementById('grid');
+const hoverLabel = document.getElementById('hover-label');
+const loadingText = document.getElementById('loading-text');
+const statusEl = document.getElementById('status');
+const textInput = document.getElementById('text-input');
+
+textInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const text = textInput.value.trim();
+    if (text && !isGenerating && !isRecording) {
+      textInput.value = '';
+      generateMemory(text);
+    }
+  }
+});
+
+// Don't let typing trigger pan/zoom
+textInput.addEventListener('mousedown', (e) => e.stopPropagation());
+textInput.addEventListener('wheel', (e) => e.stopPropagation());
+
+// ── BUILD GRID ──
+const cellElements = {};
+const dotElements = {};
+const promptElements = {};
+
+for (let row = 0; row < ROWS; row++) {
+  for (let col = 0; col < COLS; col++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    const key = `${col},${row}`;
+
+    const dot = document.createElement('div');
+    dot.className = 'cell-dot';
+
+    // Prompt label inside cell
+    const prompt = document.createElement('div');
+    prompt.className = 'cell-prompt';
+    prompt.style.opacity = '0';
+
+    if (col === CENTER_COL && row === CENTER_ROW) {
+      dot.classList.add('center');
+      prompt.textContent = 'What do you remember about your home?';
+      prompt.style.opacity = '1';
+    }
+
+    cell.appendChild(prompt);
+    cell.appendChild(dot);
+    grid.appendChild(cell);
+    cellElements[key] = cell;
+    dotElements[key] = dot;
+    promptElements[key] = prompt;
+  }
+}
+
+// ── VIEW ──
+function centerView(col, row, targetScale, animate) {
+  scale = targetScale;
+  const cx = (col + 0.5) * CELL_SIZE;
+  const cy = (row + 0.5) * CELL_SIZE;
+  panX = window.innerWidth / 2 - cx * scale;
+  panY = window.innerHeight / 2 - cy * scale;
+
+  world.style.transition = animate
+    ? 'transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1)'
+    : 'none';
+  applyTransform();
+}
+
+function applyTransform() {
+  world.style.transform =
+    `translate(${panX}px, ${panY}px) scale(${scale})`;
+}
+
+// Start zoomed into center
+centerView(CENTER_COL, CENTER_ROW, 2.5, false);
+
+// ── DOT INTERACTION ──
+// Use a single click handler approach to avoid duplicates
+const dotHandlers = new Set();
+
+function setupDotInteraction(dot, key) {
+  if (dotHandlers.has(key)) return;
+  dotHandlers.add(key);
+
+  dot.addEventListener('mouseenter', () => {
+    if (isGenerating) return;
+    const rect = dot.getBoundingClientRect();
+    hoverLabel.style.left = `${rect.left + rect.width/2}px`;
+    hoverLabel.style.top = `${rect.top + rect.height/2}px`;
+
+    if (key === activeCellKey) {
+      hoverLabel.textContent = isRecording ? '[ STOP ]' : '[ RECORD ]';
+      hoverLabel.className = isRecording ? 'visible red' : 'visible';
+    }
+
+    dot.style.opacity = '0';
+  });
+
+  dot.addEventListener('mouseleave', () => {
+    hoverLabel.className = '';
+    dot.style.opacity = '';
+  });
+
+  dot.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (isGenerating) return;
+
+    if (key !== activeCellKey) {
+      navigateToCell(key);
+    } else if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  });
+}
+
+setupDotInteraction(
+  dotElements[activeCellKey], activeCellKey
+);
+
+// ── NAVIGATE TO CELL ──
+function navigateToCell(key) {
+  const [col, row] = key.split(',').map(Number);
+
+  // Hide old prompt
+  promptElements[activeCellKey].style.opacity = '0';
+
+  // Remove center from old dot
+  dotElements[activeCellKey].classList.remove(
+    'center', 'recording'
+  );
+
+  // Deactivate all
+  Object.values(dotElements).forEach(d => {
+    d.classList.remove('active');
+  });
+
+  // Set new active
+  activeCellKey = key;
+  const newDot = dotElements[key];
+  newDot.classList.add('center');
+
+  // Setup interaction (no-op if already set up)
+  setupDotInteraction(newDot, key);
+
+  // Zoom in
+  centerView(col, row, 2.5, true);
+
+  // Show prompt in this cell
+  const prompt = promptElements[key];
+  prompt.textContent = 'What was in this space?';
+  setTimeout(() => { prompt.style.opacity = '1'; }, 800);
+}
+
+// ── ACTIVATE NEIGHBORS ──
+function activateNeighbors(col, row) {
+  const dirs = [
+    [-1,-1],[-1,0],[-1,1],
+    [0,-1],        [0,1],
+    [1,-1], [1,0], [1,1]
+  ];
+  for (const [dc, dr] of dirs) {
+    const nc = col + dc;
+    const nr = row + dr;
+    if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) {
+      const nk = `${nc},${nr}`;
+      if (!filledCells.has(nk)) {
+        const dot = dotElements[nk];
+        dot.classList.add('active');
+        dot.style.animationDelay = `${Math.random() * 2}s`;
+        setupDotInteraction(dot, nk);
+      }
+    }
+  }
+}
+
+// ── STORED IMAGES (for context passing) ──
+const storedImages = {};
+
+// ── PARTICLE RENDERERS ──
+const PARTICLE_COUNT = 60000;
+const cellRenderers = {};
+
+const CAGE_COUNT = 80000;
+
+function createParticlesForCell(imageData, mimeType, cell, key, depthData, depthMimeType) {
+  const canvasSize = Math.round(CELL_SIZE * 1.5);
+  const cvs = document.createElement('canvas');
+  cvs.className = 'cell-particles';
+  cvs.width = canvasSize;
+  cvs.height = canvasSize;
+  cell.appendChild(cvs);
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas: cvs, alpha: true, antialias: false,
+  });
+  renderer.setSize(canvasSize, canvasSize);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  camera.position.set(0, 0, 5);
+
+  // ── CAGE SPHERE ──
+  function buildCageGeometry(count, rad, pole) {
+    const pos = new Float32Array(count * 3);
+    const base = new Float32Array(count * 3);
+    const cols = new Float32Array(count * 3);
+    const norms = new Float32Array(count * 3);
+    const seeds = new Float32Array(count * 4); // per-particle random seeds
+
+    for (let i = 0; i < count; i++) {
+      // Full sphere with density weighted toward poles via rejection sampling
+      // Every latitude gets some particles, but poles get many more
+      // This preserves the round sphere silhouette
+      let phi, theta;
+
+      // Sample uniform sphere, then accept/reject to bias toward poles
+      // |cos(phi)| = 1 at poles, 0 at equator
+      let accepted = false;
+      while (!accepted) {
+        phi = Math.acos(1 - 2 * Math.random());
+        theta = Math.random() * Math.PI * 2;
+        const polarity = Math.abs(Math.cos(phi)); // 1 at poles, 0 at equator
+        // Steep power curve: at pole=1, equator gets ~1% acceptance, poles get 100%
+        // This creates ~100x density ratio between poles and equator
+        const power = 1 + pole * 10;
+        const weight = Math.pow(polarity, power) * 0.99 + 0.01;
+        if (Math.random() < weight) accepted = true;
+      }
+
+      const nx = Math.sin(phi) * Math.cos(theta);
+      const ny = Math.cos(phi); // Y-up so poles are top/bottom
+      const nz = Math.sin(phi) * Math.sin(theta);
+
+      // Tight radius — stay on the sphere surface, minimal jitter
+      const r = rad + (Math.random() - 0.5) * 0.06;
+
+      const i3 = i * 3;
+      base[i3] = nx * r; base[i3+1] = ny * r; base[i3+2] = nz * r;
+      pos[i3] = nx * r; pos[i3+1] = ny * r; pos[i3+2] = nz * r;
+      norms[i3] = nx; norms[i3+1] = ny; norms[i3+2] = nz;
+
+      // Varied brightness — some particles brighter for sparkle
+      const sparkle = Math.random() < 0.08 ? 0.9 + Math.random() * 0.1 : 0.3 + Math.random() * 0.5;
+      cols[i3] = sparkle; cols[i3+1] = sparkle; cols[i3+2] = sparkle;
+
+      // Per-particle seeds for organic animation
+      seeds[i * 4] = Math.random() * 100;
+      seeds[i * 4 + 1] = Math.random() * 100;
+      seeds[i * 4 + 2] = Math.random() * 100;
+      seeds[i * 4 + 3] = 0.5 + Math.random() * 1.0; // speed multiplier
+    }
+    return { pos, base, cols, norms, seeds };
+  }
+
+  let cageData = buildCageGeometry(CAGE_COUNT, params.cageRadius, params.poleDensity);
+  const cageGeo = new THREE.BufferGeometry();
+  cageGeo.setAttribute('position', new THREE.BufferAttribute(cageData.pos, 3));
+  cageGeo.setAttribute('color', new THREE.BufferAttribute(cageData.cols, 3));
+  cageGeo.userData = { basePos: cageData.base, normals: cageData.norms, seeds: cageData.seeds };
+
+  const cageMat = new THREE.PointsMaterial({
+    size: params.cageSize,
+    vertexColors: true,
+    transparent: true,
+    opacity: params.cageOpacity,
+    sizeAttenuation: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const cagePoints = new THREE.Points(cageGeo, cageMat);
+  scene.add(cagePoints);
+
+  // Store rebuild function for this cell
+  cagePoints.userData.rebuild = () => {
+    const count = parseInt(document.getElementById('ctrl-cagecount').value);
+    const d = buildCageGeometry(count, params.cageRadius, params.poleDensity);
+    cageGeo.setAttribute('position', new THREE.BufferAttribute(d.pos, 3));
+    cageGeo.setAttribute('color', new THREE.BufferAttribute(d.cols, 3));
+    cageGeo.userData = { basePos: d.base, normals: d.norms, seeds: d.seeds };
+    cageGeo.attributes.position.needsUpdate = true;
+    cageGeo.attributes.color.needsUpdate = true;
+  };
+
+  // ── SUBJECT PARTICLES ──
+  const img = new Image();
+  img.onload = () => {
+    const sw = 400;
+    const sh = Math.floor(img.height * (sw / img.width));
+    const colorCvs2 = document.createElement('canvas');
+    const colorCtx2 = colorCvs2.getContext('2d');
+    colorCvs2.width = sw;
+    colorCvs2.height = sh;
+    colorCtx2.drawImage(img, 0, 0, sw, sh);
+    const colorData = colorCtx2.getImageData(0, 0, sw, sh).data;
+
+    const processWithDepth = (depthPixels) => {
+      // Green-screen mask
+      const mask = new Float32Array(sw * sh);
+      for (let py = 0; py < sh; py++) {
+        for (let px = 0; px < sw; px++) {
+          const idx = (py * sw + px) * 4;
+          const r = colorData[idx], g = colorData[idx+1], b = colorData[idx+2];
+          const greenness = g - Math.max(r, b);
+          const ratio = g / (r + g + b + 1);
+          mask[py * sw + px] = ((greenness > 15 && ratio > 0.34) || (g > 100 && greenness > 10 && ratio > 0.38)) ? 0 : 1;
+        }
+      }
+
+      // Edge distance field
+      const edgeDist = new Float32Array(sw * sh);
+      const MAX_EDGE = 25;
+      for (let py = 0; py < sh; py++) {
+        for (let px = 0; px < sw; px++) {
+          if (mask[py * sw + px] === 0) continue;
+          let minD = MAX_EDGE;
+          outer:
+          for (let r = 1; r <= MAX_EDGE; r++) {
+            for (let dy = -r; dy <= r; dy++) {
+              for (let dx = -r; dx <= r; dx++) {
+                if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+                const nx2 = px + dx, ny2 = py + dy;
+                if (nx2 >= 0 && nx2 < sw && ny2 >= 0 && ny2 < sh) {
+                  if (mask[ny2 * sw + nx2] === 0) { minD = r; break outer; }
+                }
+              }
+            }
+          }
+          edgeDist[py * sw + px] = minD;
+        }
+      }
+
+      // Collect ALL subject pixels (not just edges) for full coverage
+      const valid = [];
+      for (let py = 0; py < sh; py++) {
+        for (let px = 0; px < sw; px++) {
+          const mi = py * sw + px;
+          if (mask[mi] === 0) continue;
+          const idx = mi * 4;
+          let r = colorData[idx] / 255;
+          let g = colorData[idx+1] / 255;
+          let b = colorData[idx+2] / 255;
+          const maxRB = Math.max(r, b);
+          if (g > maxRB + 0.04) g = maxRB + (g - maxRB) * 0.3;
+          const d = depthPixels ? depthPixels[idx] / 255 : (0.299*r + 0.587*g + 0.114*b);
+          const edgeProx = 1 - Math.min(edgeDist[mi] / MAX_EDGE, 1);
+          valid.push({ px, py, r, g, b, depth: d, edgeProx });
+        }
+      }
+
+      // Sample particles — mix of edge-weighted and uniform for full body coverage
+      const count = Math.min(PARTICLE_COUNT, valid.length * 3);
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+      const basePos = new Float32Array(count * 3);
+      const edgeProxArr = new Float32Array(count);
+      const seeds = new Float32Array(count * 3); // random phase offsets per particle
+
+      const aspect = sw / sh;
+      const scaleX = 2.2 * Math.min(aspect, 1.2);
+      const scaleY = 2.2 * Math.min(1/aspect, 1.2);
+
+      for (let i = 0; i < count; i++) {
+        let p;
+        if (i < count * 0.6) {
+          let attempts = 0;
+          do {
+            p = valid[Math.floor(Math.random() * valid.length)];
+            attempts++;
+          } while (p.edgeProx < 0.2 && Math.random() > p.edgeProx * 4 && attempts < 8);
+        } else {
+          p = valid[Math.floor(Math.random() * valid.length)];
+        }
+
+        const zRaw = p.depth * 2.0 - 1.0;
+        const bx = (p.px / sw - 0.5) * scaleX;
+        const by = -(p.py / sh - 0.5) * scaleY;
+        const ep = p.edgeProx;
+        // Interior: nearly flat and dense (reads as image)
+        // Edges: scatter into 3D point cloud
+        const scatter = ep * ep * 0.18;
+        const z = zRaw * (0.05 + ep * 0.95); // interior flat, edges get depth
+
+        basePos[i*3] = bx;
+        basePos[i*3+1] = by;
+        basePos[i*3+2] = z;
+        positions[i*3] = bx + (Math.random()-0.5) * scatter;
+        positions[i*3+1] = by + (Math.random()-0.5) * scatter;
+        positions[i*3+2] = z + (Math.random()-0.5) * ep * 0.3;
+        colors[i*3] = p.r;
+        colors[i*3+1] = p.g;
+        colors[i*3+2] = p.b;
+        edgeProxArr[i] = p.edgeProx;
+        // Random seeds so each particle has unique phase/frequency
+        seeds[i*3] = Math.random() * 100;
+        seeds[i*3+1] = Math.random() * 100;
+        seeds[i*3+2] = 0.7 + Math.random() * 0.6; // frequency multiplier 0.7-1.3
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      geo.userData = { basePos, edgeProx: edgeProxArr, seeds };
+
+      const mat = new THREE.PointsMaterial({
+        size: params.particleSize,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0,
+        sizeAttenuation: true,
+        blending: THREE.NormalBlending,
+        depthWrite: false,
+      });
+
+      const points = new THREE.Points(geo, mat);
+      scene.add(points);
+
+      cellRenderers[key] = {
+        renderer, scene, camera,
+        points, mat, geo,
+        cagePoints, cageMat, cageGeo,
+      };
+
+      // Image gets noise dissolve + masked overlay
+      const srcImg = cell.querySelector('.cell-image');
+      if (srcImg) srcImg.classList.add('masked');
+
+      // Start scattered, coalesce into form
+      triggerCoalesce();
+
+      const fadeIn = () => {
+        if (mat.opacity < 1.0) {
+          mat.opacity += 0.008;
+          requestAnimationFrame(fadeIn);
+        }
+      };
+      fadeIn();
+    };
+
+    if (depthData) {
+      const depthImg = new Image();
+      depthImg.onload = () => {
+        const dCvs = document.createElement('canvas');
+        const dCtx = dCvs.getContext('2d');
+        dCvs.width = sw; dCvs.height = sh;
+        dCtx.drawImage(depthImg, 0, 0, sw, sh);
+        processWithDepth(dCtx.getImageData(0, 0, sw, sh).data);
+      };
+      depthImg.src = `data:${depthMimeType};base64,${depthData}`;
+    } else {
+      processWithDepth(null);
+    }
+  };
+  img.src = `data:${mimeType};base64,${imageData}`;
+}
+
+// ── SURGE STATE ──
+// Animated turbulence/swirl surges — periodic + on image generation
+let surgeAmount = 0; // 0 = calm, 1 = full surge
+let surgeTarget = 0;
+let surgeDecay = 0.015; // how fast surge settles back
+const SURGE_TURB = 0.8;  // turbulence during full surge
+const SURGE_SWIRL = 0.7; // swirl during full surge
+
+// Trigger a coalesce: start scattered, come together
+function triggerCoalesce() {
+  surgeAmount = 1;
+  surgeTarget = 0;
+  surgeDecay = 0.008; // slow settle for generation
+}
+
+// ── ANIMATION LOOP ──
+function animateParticles() {
+  requestAnimationFrame(animateParticles);
+  const time = Date.now() * 0.001;
+
+  // ── Periodic surge: every ~8s, turbulence/swirl ramp up then settle ──
+  const surgeCycle = 8.0;
+  const surgePhase = (time % surgeCycle) / surgeCycle;
+  if (surgePhase > 0.82 && surgePhase < 0.85 && surgeTarget === 0 && surgeAmount < 0.1) {
+    surgeTarget = 0.5 + Math.random() * 0.3; // random intensity
+    surgeDecay = 0.02; // faster settle for periodic surges
+  }
+
+  // Animate surge toward target, then decay to 0
+  if (surgeAmount < surgeTarget) {
+    surgeAmount += (surgeTarget - surgeAmount) * 0.08;
+    if (surgeAmount > surgeTarget - 0.01) surgeTarget = 0;
+  } else {
+    surgeAmount *= (1 - surgeDecay);
+    if (surgeAmount < 0.001) surgeAmount = 0;
+  }
+
+  // Effective turbulence/swirl = slider base + surge boost
+  const turb = params.turbulence + surgeAmount * SURGE_TURB;
+  const swirl = params.swirl + surgeAmount * SURGE_SWIRL;
+
+  for (const key in cellRenderers) {
+    const cr = cellRenderers[key];
+    const { renderer, scene, camera, geo, mat, cageGeo, cageMat } = cr;
+    const pos = geo.attributes.position.array;
+    const base = geo.userData.basePos;
+    const edgeProx = geo.userData.edgeProx;
+    if (!base) continue;
+
+    mat.size = params.particleSize;
+
+    // ── Subject particles ──
+    const seeds = geo.userData.seeds;
+    const fb = params.feedback;
+    const baseLerp = Math.max(0.005, 0.04 + turb * 0.03 - fb * 0.03);
+    const oct = params.octaves + surgeAmount * 0.5;
+    const swParam = swirl;
+
+    for (let i = 0; i < pos.length / 3; i++) {
+      const i3 = i * 3;
+      const bx = base[i3], by = base[i3+1], bz = base[i3+2];
+      const ep = edgeProx ? edgeProx[i] : 0.5;
+      const strength = turb * (0.1 + ep * 0.9);
+
+      const sx = seeds ? seeds[i3] : i * 0.1;
+      const sy = seeds ? seeds[i3+1] : i * 0.2;
+      const freqMul = seeds ? seeds[i3+2] : 1;
+      const t = time * 0.25 * freqMul;
+
+      // Octave 1: low freq
+      let nx = noise3D(bx * 1.2 + sx, by * 1.2, t) * strength * 0.5;
+      let ny = noise3D(bx * 1.2 + sy, by * 1.2 + sy, t + 33) * strength * 0.5;
+      let nz = noise3D(bx * 1.2 + 50, by * 1.2 + 50, t + 66) * strength * 0.3;
+
+      // Octave 2: mid freq
+      nx += noise3D(bx * 4.5 + sx, by * 4.5, t * 2) * strength * 0.35 * oct;
+      ny += noise3D(bx * 4.5 + sy, by * 4.5 + sy, t * 2 + 33) * strength * 0.35 * oct;
+      nz += noise3D(bx * 4.5 + 50, by * 4.5 + 50, t * 2 + 66) * strength * 0.2 * oct;
+
+      // Octave 3: high freq
+      nx += noise3D(bx * 10 + sx, by * 10, t * 3.5) * strength * 0.2 * oct * oct;
+      ny += noise3D(bx * 10 + sy, by * 10 + sy, t * 3.5 + 33) * strength * 0.2 * oct * oct;
+      nz += noise3D(bx * 10 + 50, by * 10 + 50, t * 3.5 + 66) * strength * 0.15 * oct * oct;
+
+      // Swirl
+      const swAmt = strength * swParam * 0.6;
+      const swFreq = 0.4 + swParam * 0.4;
+      const swx = Math.sin(time * swFreq * freqMul + sy + by * 3) * swAmt;
+      const swy = Math.cos(time * swFreq * freqMul + sx + bx * 3) * swAmt;
+      const curl = swParam * strength * 0.15;
+      const cx = Math.sin(time * 0.2 + bx * 5 + by * 3) * curl;
+      const cy = Math.cos(time * 0.2 + by * 5 + bx * 3) * curl;
+
+      const tx = bx + nx + swx + cx;
+      const ty = by + ny + swy + cy;
+      const tz = bz + nz;
+
+      pos[i3]   += (tx - pos[i3]) * baseLerp;
+      pos[i3+1] += (ty - pos[i3+1]) * baseLerp;
+      pos[i3+2] += (tz - pos[i3+2]) * baseLerp;
+    }
+    geo.attributes.position.needsUpdate = true;
+
+    // ── Cage sphere: organic rotation + flowing surface movement ──
+    const cPos = cageGeo.attributes.position.array;
+    const cBase = cageGeo.userData.basePos;
+    const cNormals = cageGeo.userData.normals;
+    const cSeeds = cageGeo.userData.seeds;
+    const cColors = cageGeo.attributes.color.array;
+    const rotAngle = time * params.cageSpeed;
+    const cosR = Math.cos(rotAngle), sinR = Math.sin(rotAngle);
+    // Slow secondary tilt for organic feel
+    const tiltAngle = Math.sin(time * 0.07) * 0.15;
+    const cosT = Math.cos(tiltAngle), sinT = Math.sin(tiltAngle);
+    const totalCage = cPos.length / 3;
+    const stream = params.cageStream;
+    const clump = params.cageClump;
+
+    cr.cageMat.size = params.cageSize;
+    cr.cageMat.opacity = params.cageOpacity;
+
+    for (let i = 0; i < totalCage; i++) {
+      const i3 = i * 3;
+      const i4 = i * 4;
+      const bx = cBase[i3], by = cBase[i3+1], bz = cBase[i3+2];
+      const s0 = cSeeds ? cSeeds[i4] : i * 0.1;
+      const s1 = cSeeds ? cSeeds[i4 + 1] : i * 0.2;
+      const s2 = cSeeds ? cSeeds[i4 + 2] : i * 0.3;
+      const spdMul = cSeeds ? cSeeds[i4 + 3] : 1;
+
+      // Rotate around Y axis
+      let rx = bx * cosR + bz * sinR;
+      let ry = by;
+      let rz = -bx * sinR + bz * cosR;
+
+      // Secondary tilt around X for wobble
+      const ry2 = ry * cosT - rz * sinT;
+      const rz2 = ry * sinT + rz * cosT;
+      ry = ry2; rz = rz2;
+
+      // Organic surface flow — particles drift along the surface
+      const flowT = time * 0.12 * spdMul;
+      const flowX = Math.sin(flowT + s0 + ry * 3) * stream * 0.08;
+      const flowY = Math.sin(flowT * 0.7 + s1 + rx * 4) * stream * 0.06;
+      const flowZ = Math.cos(flowT * 0.9 + s2 + ry * 2) * stream * 0.08;
+
+      // Radial breathing — per-particle phase for organic look
+      const breathPhase = s0 * 0.5 + s1 * 0.3;
+      const breathe = 1
+        + Math.sin(time * 0.2 * spdMul + breathPhase) * 0.03
+        + Math.sin(time * 0.08 + s2) * 0.015;
+
+      // Clump drift — particles near each other drift together
+      const clumpDrift = clump * 0.04;
+      const cx = Math.sin(s0 * 0.3 + time * 0.05) * clumpDrift;
+      const cy = Math.cos(s1 * 0.3 + time * 0.04) * clumpDrift;
+      const cz = Math.sin(s2 * 0.3 + time * 0.06) * clumpDrift;
+
+      cPos[i3]   = (rx + flowX + cx) * breathe;
+      cPos[i3+1] = (ry + flowY + cy) * breathe;
+      cPos[i3+2] = (rz + flowZ + cz) * breathe;
+
+      // Fresnel: edge bright, center very dim — strong silhouette
+      const rnx = cNormals[i3] * cosR + cNormals[i3+2] * sinR;
+      const rnz = -cNormals[i3] * sinR + cNormals[i3+2] * cosR;
+      const fresnel = 1 - Math.abs(rnz);
+      const baseBright = 0.005 + Math.pow(fresnel, 1.5) * 0.95;
+      // Random twinkle
+      const twinkle = 0.85 + Math.sin(time * 2.5 * spdMul + s0 * 10) * 0.15;
+      const brightness = Math.min(1, baseBright * twinkle);
+      cColors[i3]   = brightness;
+      cColors[i3+1] = brightness;
+      cColors[i3+2] = brightness;
+    }
+    cageGeo.attributes.position.needsUpdate = true;
+    cageGeo.attributes.color.needsUpdate = true;
+
+    renderer.render(scene, camera);
+  }
+}
+animateParticles();
+
+// ── PLACE IMAGE ──
+function placeImage(imageData, mimeType, col, row, depthMap, depthMimeType) {
+  const key = `${col},${row}`;
+  const cell = cellElements[key];
+  const dot = dotElements[key];
+
+  const existing = cell.querySelector('.cell-image');
+  if (existing) existing.remove();
+  const existingCvs = cell.querySelector('.cell-particles');
+  if (existingCvs) existingCvs.remove();
+  if (cellRenderers[key]) {
+    cellRenderers[key].renderer.dispose();
+    delete cellRenderers[key];
+  }
+
+  // Green-screen removal with feathering
+  const tempImg = new Image();
+  tempImg.onload = () => {
+    const cvs = document.createElement('canvas');
+    const ctx = cvs.getContext('2d');
+    cvs.width = tempImg.width;
+    cvs.height = tempImg.height;
+    ctx.drawImage(tempImg, 0, 0);
+    const px = ctx.getImageData(0, 0, cvs.width, cvs.height);
+    const d = px.data;
+    const w = cvs.width;
+    const h = cvs.height;
+
+    // Pass 1: compute green-screen mask (0 = bg, 1 = subject)
+    const mask = new Float32Array(w * h);
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i+1], b = d[i+2];
+      const greenness = g - Math.max(r, b);
+      const ratio = g / (r + g + b + 1);
+      // Very aggressive: catch soft greens too
+      if ((greenness > 15 && ratio > 0.34) || (g > 100 && greenness > 10 && ratio > 0.38)) {
+        mask[i / 4] = 0;
+      } else {
+        mask[i / 4] = 1;
+      }
+    }
+
+    // Pass 2: compute distance from edge for dissolve
+    // Quick distance field: how far each pixel is from a mask=0 pixel
+    const edgeDist = new Float32Array(w * h);
+    const dissolveRadius = 30; // max dissolve reach in pixels
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (mask[y * w + x] === 0) { edgeDist[y * w + x] = 0; continue; }
+        let minD = dissolveRadius;
+        const sr = Math.min(dissolveRadius, 15); // search radius (capped for perf)
+        for (let r = 1; r <= sr; r++) {
+          let found = false;
+          for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
+              if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+              const nx2 = x + dx, ny2 = y + dy;
+              if (nx2 >= 0 && nx2 < w && ny2 >= 0 && ny2 < h) {
+                if (mask[ny2 * w + nx2] === 0) { minD = r; found = true; break; }
+              }
+            }
+            if (found) break;
+          }
+          if (found) break;
+        }
+        edgeDist[y * w + x] = minD;
+      }
+    }
+
+    // Pass 3: noise dissolve + feather + despill
+    const dissolve = params.dissolve;
+    const dissolveDepth = Math.max(1, dissolve * dissolveRadius);
+    for (let i = 0; i < d.length; i += 4) {
+      const pi = i / 4;
+      const x = pi % w, y = Math.floor(pi / w);
+      let a = mask[pi];
+
+      if (a > 0) {
+        const dist = edgeDist[pi];
+        if (dist < dissolveDepth) {
+          // Multi-octave noise for organic dissolve shape
+          const n1 = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+          const n2 = Math.sin(x * 4.176 + y * 23.451) * 17593.1234;
+          const n3 = Math.sin(x * 7.531 + y * 51.892) * 32145.7891;
+          const noiseVal = ((n1 - Math.floor(n1)) * 0.5
+            + (n2 - Math.floor(n2)) * 0.3
+            + (n3 - Math.floor(n3)) * 0.2);
+          // Edge factor: 1 at boundary, 0 at dissolveDepth
+          const edgeFactor = 1 - (dist / dissolveDepth);
+          // Dissolve: noise threshold decreases toward interior
+          if (noiseVal < edgeFactor) {
+            a = 0;
+          } else {
+            // Soft alpha falloff for non-dissolved edge pixels
+            a = Math.min(1, (noiseVal - edgeFactor) * 3);
+          }
+        }
+      }
+
+      d[i + 3] = Math.round(Math.max(0, Math.min(1, a)) * 255);
+      // Despill green
+      const maxRB = Math.max(d[i], d[i + 2]);
+      if (d[i + 1] > maxRB + 10) {
+        d[i + 1] = Math.round(maxRB + (d[i + 1] - maxRB) * 0.3);
+      }
+    }
+    ctx.putImageData(px, 0, 0);
+
+    const img = document.createElement('img');
+    img.className = 'cell-image';
+    img.src = cvs.toDataURL('image/png');
+    img.onload = () => {
+      img.classList.add('loaded');
+      createParticlesForCell(imageData, mimeType, cell, key, depthMap, depthMimeType);
+    };
+    cell.appendChild(img);
+  };
+  tempImg.src = `data:${mimeType};base64,${imageData}`;
+
+  storedImages[key] = { image: imageData, mimeType };
+
+  dot.classList.add('filled');
+  filledCells.add(key);
+  promptElements[key].style.opacity = '0';
+}
+
+// ── COLLECT ADJACENT IMAGES ──
+function getAdjacentImages(col, row) {
+  const adjacent = [];
+  const labels = {
+    '-1,-1': 'top-left', '0,-1': 'above',
+    '1,-1': 'top-right', '-1,0': 'left',
+    '1,0': 'right', '-1,1': 'bottom-left',
+    '0,1': 'below', '1,1': 'bottom-right',
+  };
+  for (const [offsets, position] of Object.entries(labels)) {
+    const [dc, dr] = offsets.split(',').map(Number);
+    const nc = col + dc;
+    const nr = row + dr;
+    const nk = `${nc},${nr}`;
+    if (storedImages[nk]) {
+      adjacent.push({
+        position,
+        image: storedImages[nk].image,
+        mimeType: storedImages[nk].mimeType,
+      });
+    }
+  }
+  return adjacent;
+}
+
+// ── CLOUD FUNCTION ──
+let functionUrl = '';
+
+async function detectFunctionUrl() {
+  try {
+    const res = await fetch('/__/firebase/init.json');
+    const config = await res.json();
+    functionUrl =
+      `https://us-central1-${config.projectId}.cloudfunctions.net/generateMemory`;
+  } catch (e) {
+    functionUrl =
+      'http://127.0.0.1:5001/materealized/us-central1/generateMemory';
+  }
+}
+detectFunctionUrl();
+
+// ── GENERATE ──
+async function generateMemory(prompt) {
+  if (isGenerating) return;
+  isGenerating = true;
+
+  const [col, row] = activeCellKey.split(',').map(Number);
+
+  promptElements[activeCellKey].style.opacity = '0';
+  loadingText.classList.add('active');
+  textInput.classList.add('hidden');
+
+  try {
+    if (!functionUrl) await detectFunctionUrl();
+
+    const res = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        prompt,
+        adjacentImages: getAdjacentImages(col, row),
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json()
+        .catch(() => ({error: 'Generation failed'}));
+      throw new Error(err.error || 'Generation failed');
+    }
+
+    const data = await res.json();
+    placeImage(data.image, data.mimeType, col, row, data.depthMap, data.depthMimeType);
+    loadingText.classList.remove('active');
+
+    // Zoom out, show neighbors
+    setTimeout(() => {
+      centerView(col, row, 0.85, true);
+      setTimeout(() => activateNeighbors(col, row), 1000);
+    }, 600);
+
+    statusEl.textContent = '';
+  } catch (err) {
+    statusEl.textContent = err.message;
+    loadingText.classList.remove('active');
+    promptElements[activeCellKey].style.opacity = '1';
+    console.error(err);
+  } finally {
+    isGenerating = false;
+    textInput.classList.remove('hidden');
+  }
+}
+
+// ── VOICE ──
+let recognition = null;
+if ('webkitSpeechRecognition' in window ||
+    'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    let final = '';
+    for (let i = 0; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        final += event.results[i][0].transcript;
+      } else {
+        interim += event.results[i][0].transcript;
+      }
+    }
+    const text = final + interim || 'Listening...';
+    promptElements[activeCellKey].textContent = text;
+    promptElements[activeCellKey].style.opacity = '1';
+  };
+
+  recognition.onend = () => {
+    if (isRecording) stopRecording();
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error !== 'no-speech') {
+      statusEl.textContent = `voice error: ${e.error}`;
+    }
+    isRecording = false;
+    dotElements[activeCellKey].classList.remove('recording');
+  };
+}
+
+function startRecording() {
+  if (!recognition) {
+    statusEl.textContent = 'voice not supported — use Chrome';
+    return;
+  }
+  isRecording = true;
+  textInput.classList.add('hidden');
+  const dot = dotElements[activeCellKey];
+  dot.classList.add('recording');
+  dot.style.opacity = '';
+  hoverLabel.textContent = '[ STOP ]';
+  hoverLabel.className = 'visible red';
+  promptElements[activeCellKey].textContent = 'Listening...';
+  promptElements[activeCellKey].style.opacity = '1';
+  recognition.start();
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+  try { recognition.stop(); } catch(e) {}
+
+  const dot = dotElements[activeCellKey];
+  dot.classList.remove('recording');
+  hoverLabel.className = '';
+  dot.style.opacity = '';
+  textInput.classList.remove('hidden');
+
+  const transcript =
+    promptElements[activeCellKey].textContent;
+  if (transcript && transcript !== 'Listening...') {
+    setTimeout(() => generateMemory(transcript), 300);
+  } else {
+    promptElements[activeCellKey].textContent =
+      'What do you remember about your home?';
+  }
+}
+
+// ── PAN & ZOOM ──
+viewport.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 0.92 : 1.08;
+  const newScale = Math.max(0.2, Math.min(5, scale * factor));
+  const mx = e.clientX;
+  const my = e.clientY;
+  panX = mx - (mx - panX) * (newScale / scale);
+  panY = my - (my - panY) * (newScale / scale);
+  scale = newScale;
+  world.style.transition = 'none';
+  applyTransform();
+}, {passive: false});
+
+viewport.addEventListener('mousedown', (e) => {
+  if (e.target.classList.contains('cell-dot')) return;
+  isPanning = true;
+  panStartX = e.clientX;
+  panStartY = e.clientY;
+  startPanX = panX;
+  startPanY = panY;
+  viewport.style.cursor = 'grabbing';
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!isPanning) return;
+  panX = startPanX + (e.clientX - panStartX);
+  panY = startPanY + (e.clientY - panStartY);
+  world.style.transition = 'none';
+  applyTransform();
+});
+
+window.addEventListener('mouseup', () => {
+  isPanning = false;
+  viewport.style.cursor = '';
+});
+
+window.addEventListener('resize', () => {
+  const [col, row] = activeCellKey.split(',').map(Number);
+  centerView(col, row, scale, false);
+});
+</script>
+
+</body>
+</html>
