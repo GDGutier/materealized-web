@@ -100,6 +100,56 @@
 - Feedback — lerp rate reduction (slower = more trailing)
 - Particle size — point material size
 
+### Missing Slider HTML Fix
+- Three `wire()` calls referenced HTML elements that didn't exist: `ctrl-stream`/`v-stream`, `ctrl-clump`/`v-clump`, `ctrl-pole`/`v-pole`
+- Calling `document.getElementById()` returned `null`, then `.addEventListener()` on `null` threw a TypeError and broke the entire app on load
+- Added the missing slider HTML under the Cage Sphere section with matching defaults from the `params` object
+- **Lesson:** Always verify DOM element IDs exist before wiring event listeners
+
+### Cage Sphere — Organic Pole-Density Distribution
+- **Before:** Fibonacci sphere gave perfectly even particle distribution — looked too uniform and mechanical
+- **After:** Rejection sampling with latitude-based density weighting. `|cos(phi)|` (1 at poles, 0 at equator) raised to a steep power (1 + poleDensity × 10) controls acceptance probability
+- At full pole density: equator accepts ~1% of particles, poles accept 100% — creates ~100× density ratio
+- Particles still placed on the full sphere surface (not clustered at pole points), preserving the round silhouette
+- **Lesson:** Rejection sampling with a steep power curve on latitude gives smooth density gradients without losing the sphere shape. Earlier attempts with separate cap/equator zones created visible bands and lost the spherical outline
+
+### Cage Sphere — Organic Animation
+- Replaced rigid Y-axis-only rotation with dual-axis motion: primary Y rotation + slow secondary X tilt (`sin(time * 0.07) * 0.15`) for wobble
+- Per-particle surface flow: particles drift along the surface using unique seed-driven sine/cosine offsets (controlled by stream slider)
+- Per-particle breathing with unique phase offsets instead of uniform pulsing
+- Clump drift: nearby particles move together via low-frequency seed-correlated motion (controlled by clump slider)
+- Random twinkle on brightness for sparkle variation
+- **Lesson:** Per-particle random seeds (4 per particle: 3 phase offsets + 1 speed multiplier) are essential for breaking up coherent motion in large particle systems
+
+### Cage Sphere — Fresnel Edge Boost
+- Increased fresnel silhouette brightness: power lowered from 2.0 to 1.5, range expanded to 0.005–0.95
+- Sphere boundary/rim is now much more visible, center faces nearly invisible
+- Creates stronger hollow-shell appearance matching reference
+
+### Subject Particles — Point Cloud Scan Aesthetic
+- **Before:** Flat photo image with radial mask sat on top of particles — looked like a photo with effects behind it, not a 3D scan
+- **After:** Photo image hidden (`opacity: 0`), particles are the sole visual for the subject
+- Particle count increased from 25k to 60k to carry the subject alone
+- Default particle size increased from 0.001 to 0.003
+- Interior particles (low edge proximity) have near-zero scatter and flat z-depth — they pack tightly and read as the object
+- Edge particles scatter into 3D with depth — point cloud feel at the boundaries
+- `scatter = ep² × 0.18`, `z = zRaw × (0.05 + ep × 0.95)` — smooth gradient from flat core to scattered edges
+- Interior particles also get reduced turbulence strength (`0.1 + ep × 0.9`) to keep the core stable
+
+### Subject Particles — Surge Animation (Coalesce Effect)
+- **Removed:** Periodic 2D↔3D glitch snap (too mechanical, wrong feel)
+- **Added:** Turbulence/swirl surge system with two modes:
+  - **Periodic surges:** Every ~8 seconds, turbulence and swirl automatically ramp up (random intensity 0.5–0.8) then smoothly decay back to calm. Creates organic breathing/disruption
+  - **Generation coalesce:** When a new image is placed, surge starts at 1.0 (fully scattered) and slowly decays (0.008 rate) — particles appear chaotic then gradually come together into the subject form
+- Surge adds to slider base values: `effectiveTurb = params.turbulence + surge × 0.8`, `effectiveSwirl = params.swirl + surge × 0.7`
+- Octaves also boosted during surge (`+ surge × 0.5`) for more chaotic detail
+- **Lesson:** Animating the control parameters themselves (turbulence, swirl) rather than adding separate animation systems keeps the motion consistent with the existing particle physics
+
+### Control Panel — Updated Defaults
+- Cage count slider: 80k default (up from 50k), max 150k
+- Particle size slider: 0.003 default (up from 0.001)
+- Subject particle count: 60k constant
+
 ---
 
 ## Key Lessons
