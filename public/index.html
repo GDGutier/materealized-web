@@ -31,8 +31,8 @@
 
     #grid {
       display: grid;
-      grid-template-columns: repeat(11, var(--cell-size));
-      grid-template-rows: repeat(5, var(--cell-size));
+      grid-template-columns: repeat(3, var(--cell-size));
+      grid-template-rows: repeat(3, var(--cell-size));
     }
 
     :root {
@@ -44,7 +44,7 @@
       width: var(--cell-size);
       height: var(--cell-size);
       position: relative;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: none;
       overflow: visible;
     }
 
@@ -139,27 +139,6 @@
 
     .cell-dot.filled { display: none; }
 
-    /* ── CELL IMAGE ── */
-    .cell-image {
-      position: absolute;
-      top: 20%;
-      left: 20%;
-      width: 60%;
-      height: 60%;
-      object-fit: contain;
-      border-radius: 2px;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-      z-index: 1;
-    }
-
-    .cell-image.loaded { opacity: 1; }
-
-    .cell-image.masked {
-      opacity: 0 !important;
-      pointer-events: none;
-    }
-
     .cell-particles {
       position: absolute;
       top: -25%; left: -25%;
@@ -190,15 +169,15 @@
     /* ── LOADING ── */
     #loading-text {
       position: fixed;
-      top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 0.85rem;
+      transform: translate(-50%, 0);
+      font-size: 0.7rem;
       font-weight: 300;
       color: rgba(255, 255, 255, 0.4);
       letter-spacing: 0.12em;
       z-index: 60;
       display: none;
+      pointer-events: none;
     }
 
     #loading-text.active {
@@ -257,81 +236,6 @@
       pointer-events: none;
     }
 
-    /* ── CONTROL PANEL ── */
-    #controls {
-      position: fixed;
-      top: 12px;
-      left: 12px;
-      z-index: 200;
-      background: rgba(0, 0, 0, 0.82);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.6rem;
-      font-weight: 300;
-      color: rgba(255, 255, 255, 0.55);
-      letter-spacing: 0.06em;
-      backdrop-filter: blur(10px);
-      width: 230px;
-      max-height: calc(100vh - 24px);
-      overflow-y: auto;
-    }
-
-    #controls h3 {
-      font-size: 0.55rem;
-      font-weight: 400;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: rgba(255, 255, 255, 0.35);
-      margin: 10px 0 6px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    #controls h3:first-child { margin-top: 0; padding-top: 0; border-top: none; }
-
-    .ctrl-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 2px;
-    }
-
-    .ctrl-row label {
-      flex-shrink: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.58rem;
-    }
-
-    .ctrl-row .val {
-      font-family: monospace;
-      font-size: 0.58rem;
-      color: rgba(255, 255, 255, 0.4);
-      min-width: 36px;
-      text-align: right;
-    }
-
-    #controls input[type="range"] {
-      width: 100%;
-      margin-bottom: 6px;
-      height: 2px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 1px;
-      outline: none;
-    }
-
-    #controls input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.6);
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -351,43 +255,6 @@
 }
 </script>
 
-<div id="controls">
-  <h3>Subject Particles</h3>
-  <div class="ctrl-row"><label>turbulence</label><span class="val" id="v-turb">0.30</span></div>
-  <input type="range" id="ctrl-turbulence" min="0" max="100" value="30" />
-  <div class="ctrl-row"><label>octaves</label><span class="val" id="v-oct">0.50</span></div>
-  <input type="range" id="ctrl-octaves" min="0" max="100" value="50" />
-  <div class="ctrl-row"><label>swirl</label><span class="val" id="v-swirl">0.30</span></div>
-  <input type="range" id="ctrl-swirl" min="0" max="100" value="30" />
-  <div class="ctrl-row"><label>feedback</label><span class="val" id="v-fb">0.00</span></div>
-  <input type="range" id="ctrl-feedback" min="0" max="100" value="0" />
-  <div class="ctrl-row"><label>particle size</label><span class="val" id="v-size">0.0030</span></div>
-  <input type="range" id="ctrl-size" min="1" max="50" value="30" />
-  <div class="ctrl-row"><label>count</label><span class="val" id="v-count">60000</span></div>
-
-  <h3>Image Mask</h3>
-  <div class="ctrl-row"><label>dissolve</label><span class="val" id="v-dissolve">0.50</span></div>
-  <input type="range" id="ctrl-dissolve" min="0" max="100" value="50" />
-
-  <h3>Cage Sphere</h3>
-  <div class="ctrl-row"><label>speed</label><span class="val" id="v-cage">0.15</span></div>
-  <input type="range" id="ctrl-cage" min="0" max="100" value="15" />
-  <div class="ctrl-row"><label>point size</label><span class="val" id="v-cagesize">0.006</span></div>
-  <input type="range" id="ctrl-cagesize" min="1" max="30" value="6" />
-  <div class="ctrl-row"><label>opacity</label><span class="val" id="v-cageopac">0.85</span></div>
-  <input type="range" id="ctrl-cageopac" min="0" max="100" value="85" />
-  <div class="ctrl-row"><label>count (rebuild)</label><span class="val" id="v-cagecount">80000</span></div>
-  <input type="range" id="ctrl-cagecount" min="5000" max="150000" value="80000" step="1000" />
-  <div class="ctrl-row"><label>radius (rebuild)</label><span class="val" id="v-radius">2.00</span></div>
-  <input type="range" id="ctrl-radius" min="100" max="350" value="200" />
-  <div class="ctrl-row"><label>stream</label><span class="val" id="v-stream">0.60</span></div>
-  <input type="range" id="ctrl-stream" min="0" max="100" value="60" />
-  <div class="ctrl-row"><label>clump</label><span class="val" id="v-clump">0.50</span></div>
-  <input type="range" id="ctrl-clump" min="0" max="100" value="50" />
-  <div class="ctrl-row"><label>pole density (rebuild)</label><span class="val" id="v-pole">0.50</span></div>
-  <input type="range" id="ctrl-pole" min="0" max="100" value="50" />
-  <button id="btn-rebuild-cage" style="width:100%;margin-top:6px;padding:5px;font-size:0.6rem;font-family:Inter,sans-serif;text-transform:uppercase;letter-spacing:0.1em;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:4px;color:rgba(255,255,255,0.5);cursor:pointer;">rebuild cage</button>
-</div>
 
 <div id="hover-label">[ RECORD ]</div>
 <div id="loading-text">materializing...</div>
@@ -397,92 +264,148 @@
 <script type="module">
 import * as THREE from 'three';
 
-// ── SIMPLEX-LIKE 3D NOISE ──
-function noise3D(x, y, z) {
-  const p = x * 12.9898 + y * 78.233 + z * 45.164;
-  const s1 = Math.sin(x * 1.27 + y * 3.41 + z * 2.63) * 43758.5453;
-  const s2 = Math.sin(x * 2.91 + y * 1.73 + z * 4.19) * 23421.6312;
-  const s3 = Math.sin(x * 0.83 + y * 4.57 + z * 1.31) * 65432.1234;
-  return (
-    (s1 - Math.floor(s1)) * 0.5 +
-    (s2 - Math.floor(s2)) * 0.3 +
-    (s3 - Math.floor(s3)) * 0.2
-  ) - 0.5;
+// ── SIMPLEX 3D NOISE (Gustavson/Ashima) ──
+const _p = new Uint8Array(512);
+const _g3 = [
+  [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
+  [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
+  [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1],
+];
+{ // seed permutation table
+  const t = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) t[i] = i;
+  for (let i = 255; i > 0; i--) {
+    const j = (i * 48271 + 11) % (i + 1); // deterministic shuffle
+    [t[i], t[j]] = [t[j], t[i]];
+  }
+  for (let i = 0; i < 512; i++) _p[i] = t[i & 255];
+}
+
+function simplex3(x, y, z) {
+  const F3 = 1 / 3, G3 = 1 / 6;
+  const s = (x + y + z) * F3;
+  const i = Math.floor(x + s), j = Math.floor(y + s), k = Math.floor(z + s);
+  const t = (i + j + k) * G3;
+  const x0 = x - (i - t), y0 = y - (j - t), z0 = z - (k - t);
+
+  let i1, j1, k1, i2, j2, k2;
+  if (x0 >= y0) {
+    if (y0 >= z0)      { i1=1;j1=0;k1=0;i2=1;j2=1;k2=0; }
+    else if (x0 >= z0) { i1=1;j1=0;k1=0;i2=1;j2=0;k2=1; }
+    else               { i1=0;j1=0;k1=1;i2=1;j2=0;k2=1; }
+  } else {
+    if (y0 < z0)       { i1=0;j1=0;k1=1;i2=0;j2=1;k2=1; }
+    else if (x0 < z0)  { i1=0;j1=1;k1=0;i2=0;j2=1;k2=1; }
+    else               { i1=0;j1=1;k1=0;i2=1;j2=1;k2=0; }
+  }
+
+  const x1 = x0-i1+G3, y1 = y0-j1+G3, z1 = z0-k1+G3;
+  const x2 = x0-i2+2*G3, y2 = y0-j2+2*G3, z2 = z0-k2+2*G3;
+  const x3 = x0-1+3*G3, y3 = y0-1+3*G3, z3 = z0-1+3*G3;
+
+  const ii = i & 255, jj = j & 255, kk = k & 255;
+  let n = 0;
+
+  let v = 0.6 - x0*x0 - y0*y0 - z0*z0;
+  if (v > 0) { v *= v; const g = _g3[_p[ii+_p[jj+_p[kk]]] % 12]; n += v*v*(g[0]*x0+g[1]*y0+g[2]*z0); }
+  v = 0.6 - x1*x1 - y1*y1 - z1*z1;
+  if (v > 0) { v *= v; const g = _g3[_p[ii+i1+_p[jj+j1+_p[kk+k1]]] % 12]; n += v*v*(g[0]*x1+g[1]*y1+g[2]*z1); }
+  v = 0.6 - x2*x2 - y2*y2 - z2*z2;
+  if (v > 0) { v *= v; const g = _g3[_p[ii+i2+_p[jj+j2+_p[kk+k2]]] % 12]; n += v*v*(g[0]*x2+g[1]*y2+g[2]*z2); }
+  v = 0.6 - x3*x3 - y3*y3 - z3*z3;
+  if (v > 0) { v *= v; const g = _g3[_p[ii+1+_p[jj+1+_p[kk+1]]] % 12]; n += v*v*(g[0]*x3+g[1]*y3+g[2]*z3); }
+
+  return 32 * n; // [-1, 1]
+}
+
+// ── CURL NOISE (divergence-free flow) ──
+function curlNoise(x, y, z) {
+  const e = 0.15;
+  // 3 potential fields with spatial offsets
+  const p1a = simplex3(x, y + e, z + 31.4) - simplex3(x, y - e, z + 31.4);
+  const p1b = simplex3(x, y, z + e + 31.4) - simplex3(x, y, z - e + 31.4);
+  const p2a = simplex3(x + e, y + 47.8, z) - simplex3(x - e, y + 47.8, z);
+  const p2b = simplex3(x, y + 47.8, z + e) - simplex3(x, y + 47.8, z - e);
+  const p3a = simplex3(x + e, y, z + 89.4) - simplex3(x - e, y, z + 89.4);
+  const p3b = simplex3(x, y + e, z + 89.4) - simplex3(x, y - e, z + 89.4);
+  const d = 1 / (2 * e);
+  return [p1a * d - p2b * d, p2a * d - p3b * d, p3a * d - p1b * d]; // curl(F) = [dF3/dy - dF2/dz, ...]
+}
+
+// ── VORTEX ATTRACTORS ──
+const vortices = [];
+for (let i = 0; i < 7; i++) {
+  vortices.push({
+    phase: i * Math.PI * 2 / 7,
+    speed: 0.08 + i * 0.05,
+    radius: 0.6 + i * 0.25,
+    tilt: i * 0.55,
+    strength: 0.4 + i * 0.08,
+    posX: 0, posY: 0, posZ: 0,
+    axisX: 0, axisY: 1, axisZ: 0,
+  });
+}
+
+function updateVortices(time) {
+  for (const v of vortices) {
+    const a = time * v.speed + v.phase;
+    v.posX = Math.cos(a) * v.radius;
+    v.posY = Math.sin(a * 0.7 + v.tilt) * v.radius * 0.5;
+    v.posZ = Math.sin(a) * v.radius;
+    v.axisX = -Math.sin(a);
+    v.axisY = Math.cos(a * 0.7 + v.tilt) * 0.5;
+    v.axisZ = Math.cos(a);
+    const len = Math.sqrt(v.axisX*v.axisX + v.axisY*v.axisY + v.axisZ*v.axisZ) || 1;
+    v.axisX /= len; v.axisY /= len; v.axisZ /= len;
+  }
+}
+
+function vortexForce(px, py, pz) {
+  let fx = 0, fy = 0, fz = 0;
+  for (const v of vortices) {
+    const dx = px - v.posX, dy = py - v.posY, dz = pz - v.posZ;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.01;
+    const core = 0.3;
+    const speed = dist < core ? v.strength * dist / core : v.strength * core / dist;
+    // tangential = axis × displacement
+    const tx = v.axisY*dz - v.axisZ*dy;
+    const ty = v.axisZ*dx - v.axisX*dz;
+    const tz = v.axisX*dy - v.axisY*dx;
+    const tLen = Math.sqrt(tx*tx + ty*ty + tz*tz) || 1;
+    fx += (tx/tLen) * speed;
+    fy += (ty/tLen) * speed;
+    fz += (tz/tLen) * speed;
+  }
+  return [fx, fy, fz];
 }
 
 // ── CONTROLS ──
+// ── LOCKED SETTINGS ──
 const params = {
-  turbulence: 0.3,
-  octaves: 0.5,
-  swirl: 0.3,
-  feedback: 0,
-  particleSize: 0.003,
-  dissolve: 0.5,
-  cageSpeed: 0.15,
-  cageSize: 0.006,
-  cageOpacity: 0.85,
-  cageStream: 0.6,
-  cageClump: 0.5,
-  cageRadius: 2.0,
-  poleDensity: 0.5,
+  particleSize: 0.0092,
+  subjectCount: 60000,
+  depthScale: 0.56,
+  dispersion: 0,
+  cageSpeed: 0.32,
+  cageSize: 0.029,
+  cageOpacity: 0.91,
+  cageStream: 0,
+  cageClump: 0,
+  cageRadius: 1.82,
+  poleDensity: 0.48,
 };
 
-// Wire all sliders with value display
-function wire(id, param, divisor, valId, fmt) {
-  const el = document.getElementById(id);
-  const valEl = document.getElementById(valId);
-  el.addEventListener('input', () => {
-    const v = el.value / divisor;
-    params[param] = v;
-    valEl.textContent = fmt ? fmt(v) : v.toFixed(2);
-  });
-}
-wire('ctrl-turbulence', 'turbulence', 100, 'v-turb');
-wire('ctrl-octaves', 'octaves', 100, 'v-oct');
-wire('ctrl-swirl', 'swirl', 100, 'v-swirl');
-wire('ctrl-feedback', 'feedback', 100, 'v-fb');
-wire('ctrl-size', 'particleSize', 10000, 'v-size', v => v.toFixed(4));
-wire('ctrl-dissolve', 'dissolve', 100, 'v-dissolve');
-wire('ctrl-cage', 'cageSpeed', 100, 'v-cage');
-wire('ctrl-radius', 'cageRadius', 100, 'v-radius');
-wire('ctrl-cageopac', 'cageOpacity', 100, 'v-cageopac');
-wire('ctrl-stream', 'cageStream', 100, 'v-stream');
-wire('ctrl-clump', 'cageClump', 100, 'v-clump');
-wire('ctrl-pole', 'poleDensity', 100, 'v-pole');
+// ── CAGE ANIMATION STATE ──
+let cageAnimActive = false;
+let cageAnimStartTime = 0;
+let cageRotAngle = 0;
+let lastAnimTime = Date.now() * 0.001;
 
-// Cage point size (special — updates material directly)
-const ctrlCageSize = document.getElementById('ctrl-cagesize');
-ctrlCageSize.addEventListener('input', () => {
-  params.cageSize = ctrlCageSize.value / 1000;
-  document.getElementById('v-cagesize').textContent = params.cageSize.toFixed(3);
-});
-
-// Cage count display
-const ctrlCageCount = document.getElementById('ctrl-cagecount');
-ctrlCageCount.addEventListener('input', () => {
-  document.getElementById('v-cagecount').textContent = ctrlCageCount.value;
-});
-
-// Rebuild cage button — regenerates cage particles for all active cells
-document.getElementById('btn-rebuild-cage').addEventListener('click', () => {
-  for (const key in cellRenderers) {
-    const cr = cellRenderers[key];
-    if (cr.cagePoints && cr.cagePoints.userData.rebuild) {
-      cr.cagePoints.userData.rebuild();
-    }
-  }
-});
-
-// Stop controls from triggering pan/zoom
-const controlsEl = document.getElementById('controls');
-controlsEl.addEventListener('mousedown', (e) => e.stopPropagation());
-controlsEl.addEventListener('wheel', (e) => e.stopPropagation());
-
-const COLS = 11;
-const ROWS = 5;
+const COLS = 3;
+const ROWS = 3;
 const CELL_SIZE = 500;
-const CENTER_COL = 5;
-const CENTER_ROW = 2;
+const CENTER_COL = 1;
+const CENTER_ROW = 1;
 
 // ── STATE ──
 const filledCells = new Set();
@@ -546,6 +469,9 @@ for (let row = 0; row < ROWS; row++) {
       dot.classList.add('center');
       prompt.textContent = 'What do you remember about your home?';
       prompt.style.opacity = '1';
+    } else {
+      // Hide dots on non-center cells until activated as neighbors
+      dot.style.display = 'none';
     }
 
     cell.appendChild(prompt);
@@ -672,6 +598,7 @@ function activateNeighbors(col, row) {
       const nk = `${nc},${nr}`;
       if (!filledCells.has(nk)) {
         const dot = dotElements[nk];
+        dot.style.display = ''; // show the dot
         dot.classList.add('active');
         dot.style.animationDelay = `${Math.random() * 2}s`;
         setupDotInteraction(dot, nk);
@@ -684,12 +611,53 @@ function activateNeighbors(col, row) {
 const storedImages = {};
 
 // ── PARTICLE RENDERERS ──
-const PARTICLE_COUNT = 60000;
 const cellRenderers = {};
 
-const CAGE_COUNT = 80000;
+const CAGE_COUNT = 14000;
 
-function createParticlesForCell(imageData, mimeType, cell, key, depthData, depthMimeType) {
+// ── CAGE SPHERE GEOMETRY ──
+function buildCageGeometry(count, rad, pole) {
+  const pos = new Float32Array(count * 3);
+  const base = new Float32Array(count * 3);
+  const cols = new Float32Array(count * 3);
+  const norms = new Float32Array(count * 3);
+  const seeds = new Float32Array(count * 4);
+  for (let i = 0; i < count; i++) {
+    let phi, theta, accepted = false;
+    while (!accepted) {
+      phi = Math.acos(1 - 2 * Math.random());
+      theta = Math.random() * Math.PI * 2;
+      const polarity = Math.abs(Math.cos(phi));
+      const power = 1 + pole * 10;
+      const weight = Math.pow(polarity, power) * 0.99 + 0.01;
+      if (Math.random() < weight) accepted = true;
+    }
+    const nx = Math.sin(phi) * Math.cos(theta);
+    const ny = Math.cos(phi);
+    const nz = Math.sin(phi) * Math.sin(theta);
+    const r = rad + (Math.random() - 0.5) * 0.06;
+    const i3 = i * 3;
+    base[i3] = nx*r; base[i3+1] = ny*r; base[i3+2] = nz*r;
+    pos[i3] = nx*r; pos[i3+1] = ny*r; pos[i3+2] = nz*r;
+    norms[i3] = nx; norms[i3+1] = ny; norms[i3+2] = nz;
+    const sparkle = Math.random() < 0.08 ? 0.9+Math.random()*0.1 : 0.3+Math.random()*0.5;
+    cols[i3] = sparkle; cols[i3+1] = sparkle; cols[i3+2] = sparkle;
+    seeds[i*4] = Math.random()*100; seeds[i*4+1] = Math.random()*100;
+    seeds[i*4+2] = Math.random()*100; seeds[i*4+3] = 0.5+Math.random()*1.0;
+  }
+  return { pos, base, cols, norms, seeds };
+}
+
+// ── INIT CAGE (called at generation start, before API call) ──
+function initCageForCell(cell, key) {
+  // Clean up existing
+  const existingCvs = cell.querySelector('.cell-particles');
+  if (existingCvs) existingCvs.remove();
+  if (cellRenderers[key]) {
+    cellRenderers[key].renderer.dispose();
+    delete cellRenderers[key];
+  }
+
   const canvasSize = Math.round(CELL_SIZE * 1.5);
   const cvs = document.createElement('canvas');
   cvs.className = 'cell-particles';
@@ -707,87 +675,54 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
   camera.position.set(0, 0, 5);
 
-  // ── CAGE SPHERE ──
-  function buildCageGeometry(count, rad, pole) {
-    const pos = new Float32Array(count * 3);
-    const base = new Float32Array(count * 3);
-    const cols = new Float32Array(count * 3);
-    const norms = new Float32Array(count * 3);
-    const seeds = new Float32Array(count * 4); // per-particle random seeds
-
-    for (let i = 0; i < count; i++) {
-      // Full sphere with density weighted toward poles via rejection sampling
-      // Every latitude gets some particles, but poles get many more
-      // This preserves the round sphere silhouette
-      let phi, theta;
-
-      // Sample uniform sphere, then accept/reject to bias toward poles
-      // |cos(phi)| = 1 at poles, 0 at equator
-      let accepted = false;
-      while (!accepted) {
-        phi = Math.acos(1 - 2 * Math.random());
-        theta = Math.random() * Math.PI * 2;
-        const polarity = Math.abs(Math.cos(phi)); // 1 at poles, 0 at equator
-        // Steep power curve: at pole=1, equator gets ~1% acceptance, poles get 100%
-        // This creates ~100x density ratio between poles and equator
-        const power = 1 + pole * 10;
-        const weight = Math.pow(polarity, power) * 0.99 + 0.01;
-        if (Math.random() < weight) accepted = true;
-      }
-
-      const nx = Math.sin(phi) * Math.cos(theta);
-      const ny = Math.cos(phi); // Y-up so poles are top/bottom
-      const nz = Math.sin(phi) * Math.sin(theta);
-
-      // Tight radius — stay on the sphere surface, minimal jitter
-      const r = rad + (Math.random() - 0.5) * 0.06;
-
-      const i3 = i * 3;
-      base[i3] = nx * r; base[i3+1] = ny * r; base[i3+2] = nz * r;
-      pos[i3] = nx * r; pos[i3+1] = ny * r; pos[i3+2] = nz * r;
-      norms[i3] = nx; norms[i3+1] = ny; norms[i3+2] = nz;
-
-      // Varied brightness — some particles brighter for sparkle
-      const sparkle = Math.random() < 0.08 ? 0.9 + Math.random() * 0.1 : 0.3 + Math.random() * 0.5;
-      cols[i3] = sparkle; cols[i3+1] = sparkle; cols[i3+2] = sparkle;
-
-      // Per-particle seeds for organic animation
-      seeds[i * 4] = Math.random() * 100;
-      seeds[i * 4 + 1] = Math.random() * 100;
-      seeds[i * 4 + 2] = Math.random() * 100;
-      seeds[i * 4 + 3] = 0.5 + Math.random() * 1.0; // speed multiplier
-    }
-    return { pos, base, cols, norms, seeds };
-  }
-
-  let cageData = buildCageGeometry(CAGE_COUNT, params.cageRadius, params.poleDensity);
+  // Build cage — same code as before
   const cageGeo = new THREE.BufferGeometry();
+  const cageData = buildCageGeometry(CAGE_COUNT, params.cageRadius, params.poleDensity);
   cageGeo.setAttribute('position', new THREE.BufferAttribute(cageData.pos, 3));
   cageGeo.setAttribute('color', new THREE.BufferAttribute(cageData.cols, 3));
   cageGeo.userData = { basePos: cageData.base, normals: cageData.norms, seeds: cageData.seeds };
 
   const cageMat = new THREE.PointsMaterial({
-    size: params.cageSize,
-    vertexColors: true,
-    transparent: true,
-    opacity: params.cageOpacity,
-    sizeAttenuation: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
+    size: 0.0002, vertexColors: true, transparent: true,
+    opacity: 0, sizeAttenuation: true,
+    blending: THREE.AdditiveBlending, depthWrite: false,
   });
   const cagePoints = new THREE.Points(cageGeo, cageMat);
+  cagePoints.scale.set(0.06, 0.06, 0.06); // slightly bigger than the dot
+  cageGeo.setDrawRange(0, 10); // start with almost nothing visible
   scene.add(cagePoints);
 
-  // Store rebuild function for this cell
-  cagePoints.userData.rebuild = () => {
-    const count = parseInt(document.getElementById('ctrl-cagecount').value);
-    const d = buildCageGeometry(count, params.cageRadius, params.poleDensity);
-    cageGeo.setAttribute('position', new THREE.BufferAttribute(d.pos, 3));
-    cageGeo.setAttribute('color', new THREE.BufferAttribute(d.cols, 3));
-    cageGeo.userData = { basePos: d.base, normals: d.norms, seeds: d.seeds };
-    cageGeo.attributes.position.needsUpdate = true;
-    cageGeo.attributes.color.needsUpdate = true;
+  // Store in cellRenderers so animation loop can render it
+  cellRenderers[key] = {
+    renderer, scene, camera,
+    points: null, mat: null, geo: null, // subject particles added later
+    cagePoints, cageMat, cageGeo,
   };
+
+  return { renderer, scene, camera, cagePoints, cageMat, cageGeo };
+}
+
+function createParticlesForCell(imageData, mimeType, cell, key, depthData, depthMimeType) {
+  // Reuse existing renderer/scene/cage from initCageForCell
+  let renderer, scene, camera, cagePoints, cageMat, cageGeo;
+  const existing = cellRenderers[key];
+  if (existing) {
+    renderer = existing.renderer;
+    scene = existing.scene;
+    camera = existing.camera;
+    cagePoints = existing.cagePoints;
+    cageMat = existing.cageMat;
+    cageGeo = existing.cageGeo;
+  } else {
+    // Fallback: create everything fresh
+    const setup = initCageForCell(cell, key);
+    renderer = setup.renderer;
+    scene = setup.scene;
+    camera = setup.camera;
+    cagePoints = setup.cagePoints;
+    cageMat = setup.cageMat;
+    cageGeo = setup.cageGeo;
+  }
 
   // ── SUBJECT PARTICLES ──
   const img = new Image();
@@ -802,7 +737,7 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
     const colorData = colorCtx2.getImageData(0, 0, sw, sh).data;
 
     const processWithDepth = (depthPixels) => {
-      // Green-screen mask
+      // Green-screen mask only (no dark pixel removal — it cuts into the subject)
       const mask = new Float32Array(sw * sh);
       for (let py = 0; py < sh; py++) {
         for (let px = 0; px < sw; px++) {
@@ -810,30 +745,33 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
           const r = colorData[idx], g = colorData[idx+1], b = colorData[idx+2];
           const greenness = g - Math.max(r, b);
           const ratio = g / (r + g + b + 1);
-          mask[py * sw + px] = ((greenness > 15 && ratio > 0.34) || (g > 100 && greenness > 10 && ratio > 0.38)) ? 0 : 1;
+          const isGreen = (greenness > 15 && ratio > 0.34) || (g > 100 && greenness > 10 && ratio > 0.38);
+          mask[py * sw + px] = isGreen ? 0 : 1;
         }
       }
 
-      // Edge distance field
+      // Edge distance field — Euclidean (round contours, not rectangular)
       const edgeDist = new Float32Array(sw * sh);
       const MAX_EDGE = 25;
+      const MAX_EDGE_SQ = MAX_EDGE * MAX_EDGE;
       for (let py = 0; py < sh; py++) {
         for (let px = 0; px < sw; px++) {
           if (mask[py * sw + px] === 0) continue;
-          let minD = MAX_EDGE;
-          outer:
-          for (let r = 1; r <= MAX_EDGE; r++) {
-            for (let dy = -r; dy <= r; dy++) {
-              for (let dx = -r; dx <= r; dx++) {
-                if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
-                const nx2 = px + dx, ny2 = py + dy;
-                if (nx2 >= 0 && nx2 < sw && ny2 >= 0 && ny2 < sh) {
-                  if (mask[ny2 * sw + nx2] === 0) { minD = r; break outer; }
-                }
+          let minDSq = MAX_EDGE_SQ;
+          const sr = Math.min(MAX_EDGE, 15); // search radius capped for perf
+          for (let dy = -sr; dy <= sr; dy++) {
+            const ny2 = py + dy;
+            if (ny2 < 0 || ny2 >= sh) continue;
+            for (let dx = -sr; dx <= sr; dx++) {
+              const nx2 = px + dx;
+              if (nx2 < 0 || nx2 >= sw) continue;
+              if (mask[ny2 * sw + nx2] === 0) {
+                const dSq = dx * dx + dy * dy;
+                if (dSq < minDSq) minDSq = dSq;
               }
             }
           }
-          edgeDist[py * sw + px] = minD;
+          edgeDist[py * sw + px] = Math.sqrt(minDSq);
         }
       }
 
@@ -856,7 +794,7 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
       }
 
       // Sample particles — mix of edge-weighted and uniform for full body coverage
-      const count = Math.min(PARTICLE_COUNT, valid.length * 3);
+      const count = Math.min(params.subjectCount, valid.length * 3);
       const positions = new Float32Array(count * 3);
       const colors = new Float32Array(count * 3);
       const basePos = new Float32Array(count * 3);
@@ -869,34 +807,37 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
 
       for (let i = 0; i < count; i++) {
         let p;
-        if (i < count * 0.6) {
+        if (i < count * 0.25) {
+          // 25% edge-weighted for dissolve boundary detail
           let attempts = 0;
           do {
             p = valid[Math.floor(Math.random() * valid.length)];
             attempts++;
-          } while (p.edgeProx < 0.2 && Math.random() > p.edgeProx * 4 && attempts < 8);
+          } while (p.edgeProx < 0.3 && Math.random() > p.edgeProx * 3 && attempts < 6);
         } else {
+          // 75% uniform — dense interior coverage
           p = valid[Math.floor(Math.random() * valid.length)];
         }
 
-        const zRaw = p.depth * 2.0 - 1.0;
         const bx = (p.px / sw - 0.5) * scaleX;
         const by = -(p.py / sh - 0.5) * scaleY;
+        // Full depth for ALL pixels — depthScale controls magnitude uniformly
+        const z = (p.depth * 2.0 - 1.0) * params.depthScale;
         const ep = p.edgeProx;
-        // Interior: nearly flat and dense (reads as image)
-        // Edges: scatter into 3D point cloud
-        const scatter = ep * ep * 0.18;
-        const z = zRaw * (0.05 + ep * 0.95); // interior flat, edges get depth
+        // Only edges get scatter — interior stays tight
+        const scatter = ep * ep * 0.12;
 
         basePos[i*3] = bx;
         basePos[i*3+1] = by;
         basePos[i*3+2] = z;
         positions[i*3] = bx + (Math.random()-0.5) * scatter;
         positions[i*3+1] = by + (Math.random()-0.5) * scatter;
-        positions[i*3+2] = z + (Math.random()-0.5) * ep * 0.3;
-        colors[i*3] = p.r;
-        colors[i*3+1] = p.g;
-        colors[i*3+2] = p.b;
+        positions[i*3+2] = z + (Math.random()-0.5) * scatter * 0.5;
+        // Min brightness so shadow particles don't vanish on black bg
+        const minB = 0.08;
+        colors[i*3] = Math.max(p.r, minB);
+        colors[i*3+1] = Math.max(p.g, minB);
+        colors[i*3+2] = Math.max(p.b, minB);
         edgeProxArr[i] = p.edgeProx;
         // Random seeds so each particle has unique phase/frequency
         seeds[i*3] = Math.random() * 100;
@@ -907,7 +848,9 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      geo.userData = { basePos, edgeProx: edgeProxArr, seeds };
+      const targetPos = new Float32Array(basePos.length);
+      targetPos.set(basePos);
+      geo.userData = { basePos, edgeProx: edgeProxArr, seeds, targetPos };
 
       const mat = new THREE.PointsMaterial({
         size: params.particleSize,
@@ -922,22 +865,71 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
       const points = new THREE.Points(geo, mat);
       scene.add(points);
 
-      cellRenderers[key] = {
-        renderer, scene, camera,
-        points, mat, geo,
-        cagePoints, cageMat, cageGeo,
+      // Update existing cellRenderer entry with subject particles
+      const cr = cellRenderers[key];
+      cr.points = points;
+      cr.mat = mat;
+      cr.geo = geo;
+
+      // Store rebuild function for subject particles
+      geo.userData.rebuildSubject = () => {
+        const cnt = Math.min(params.subjectCount, valid.length * 3);
+        const newPos = new Float32Array(cnt * 3);
+        const newBase = new Float32Array(cnt * 3);
+        const newColors = new Float32Array(cnt * 3);
+        const newEdge = new Float32Array(cnt);
+        const newSeeds = new Float32Array(cnt * 3);
+        for (let j = 0; j < cnt; j++) {
+          let pp;
+          if (j < cnt * 0.25) {
+            let att = 0;
+            do { pp = valid[Math.floor(Math.random() * valid.length)]; att++; }
+            while (pp.edgeProx < 0.3 && Math.random() > pp.edgeProx * 3 && att < 6);
+          } else {
+            pp = valid[Math.floor(Math.random() * valid.length)];
+          }
+          const bxx = (pp.px / sw - 0.5) * scaleX;
+          const byy = -(pp.py / sh - 0.5) * scaleY;
+          const zz = (pp.depth * 2.0 - 1.0) * params.depthScale;
+          const epp = pp.edgeProx;
+          const sc = epp * epp * 0.12;
+          newBase[j*3] = bxx; newBase[j*3+1] = byy; newBase[j*3+2] = zz;
+          newPos[j*3] = bxx + (Math.random()-0.5)*sc;
+          newPos[j*3+1] = byy + (Math.random()-0.5)*sc;
+          newPos[j*3+2] = zz + (Math.random()-0.5)*sc*0.5;
+          newColors[j*3] = Math.max(pp.r, 0.08);
+          newColors[j*3+1] = Math.max(pp.g, 0.08);
+          newColors[j*3+2] = Math.max(pp.b, 0.08);
+          newEdge[j] = epp;
+          newSeeds[j*3] = Math.random()*100;
+          newSeeds[j*3+1] = Math.random()*100;
+          newSeeds[j*3+2] = 0.7+Math.random()*0.6;
+        }
+        geo.setAttribute('position', new THREE.BufferAttribute(newPos, 3));
+        geo.setAttribute('color', new THREE.BufferAttribute(newColors, 3));
+        const newTarget = new Float32Array(newBase.length);
+        newTarget.set(newBase);
+        geo.userData.basePos = newBase;
+        geo.userData.edgeProx = newEdge;
+        geo.userData.seeds = newSeeds;
+        geo.userData.targetPos = newTarget;
+        geo.userData.rebuildSubject = geo.userData.rebuildSubject;
+        geo.attributes.position.needsUpdate = true;
+        geo.attributes.color.needsUpdate = true;
       };
 
-      // Image gets noise dissolve + masked overlay
-      const srcImg = cell.querySelector('.cell-image');
-      if (srcImg) srcImg.classList.add('masked');
+      // No DOM image to clean up — particles only
 
       // Start scattered, coalesce into form
       triggerCoalesce();
 
+      // End cage growth animation — snap to full size
+      cageAnimActive = false;
+      cagePoints.scale.set(1, 1, 1);
+
       const fadeIn = () => {
         if (mat.opacity < 1.0) {
-          mat.opacity += 0.008;
+          mat.opacity += 0.01;
           requestAnimationFrame(fadeIn);
         }
       };
@@ -962,117 +954,154 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
 }
 
 // ── SURGE STATE ──
-// Animated turbulence/swirl surges — periodic + on image generation
-let surgeAmount = 0; // 0 = calm, 1 = full surge
-let surgeTarget = 0;
-let surgeDecay = 0.015; // how fast surge settles back
-const SURGE_TURB = 0.8;  // turbulence during full surge
-const SURGE_SWIRL = 0.7; // swirl during full surge
+let surgeAmount = 0;
+let surgeDecay = 0.015;
+let frameCount = 0;
 
-// Trigger a coalesce: start scattered, come together
 function triggerCoalesce() {
   surgeAmount = 1;
-  surgeTarget = 0;
-  surgeDecay = 0.008; // slow settle for generation
+  surgeDecay = 0.006;
 }
 
 // ── ANIMATION LOOP ──
 function animateParticles() {
   requestAnimationFrame(animateParticles);
   const time = Date.now() * 0.001;
+  frameCount++;
 
-  // ── Periodic surge: every ~8s, turbulence/swirl ramp up then settle ──
-  const surgeCycle = 8.0;
-  const surgePhase = (time % surgeCycle) / surgeCycle;
-  if (surgePhase > 0.82 && surgePhase < 0.85 && surgeTarget === 0 && surgeAmount < 0.1) {
-    surgeTarget = 0.5 + Math.random() * 0.3; // random intensity
-    surgeDecay = 0.02; // faster settle for periodic surges
-  }
-
-  // Animate surge toward target, then decay to 0
-  if (surgeAmount < surgeTarget) {
-    surgeAmount += (surgeTarget - surgeAmount) * 0.08;
-    if (surgeAmount > surgeTarget - 0.01) surgeTarget = 0;
-  } else {
+  // Surge tracks dispersion slider
+  const sliderTarget = params.dispersion;
+  if (surgeAmount > sliderTarget) {
     surgeAmount *= (1 - surgeDecay);
-    if (surgeAmount < 0.001) surgeAmount = 0;
+    if (surgeAmount < sliderTarget) surgeAmount = sliderTarget;
+  } else {
+    surgeAmount += (sliderTarget - surgeAmount) * 0.06;
   }
 
-  // Effective turbulence/swirl = slider base + surge boost
-  const turb = params.turbulence + surgeAmount * SURGE_TURB;
-  const swirl = params.swirl + surgeAmount * SURGE_SWIRL;
+  updateVortices(time);
+  const surge = surgeAmount;
+  const lerpRate = 0.03 + surge * 0.04;
 
   for (const key in cellRenderers) {
     const cr = cellRenderers[key];
     const { renderer, scene, camera, geo, mat, cageGeo, cageMat } = cr;
-    const pos = geo.attributes.position.array;
-    const base = geo.userData.basePos;
-    const edgeProx = geo.userData.edgeProx;
-    if (!base) continue;
 
-    mat.size = params.particleSize;
+    // Subject particles may not exist yet (cage-only during generation)
+    const hasSubject = geo && mat && geo.userData.basePos && geo.userData.targetPos;
+    if (hasSubject) {
+      const pos = geo.attributes.position.array;
+      const base = geo.userData.basePos;
+      const edgeProx = geo.userData.edgeProx;
+      const tgt = geo.userData.targetPos;
+      const seeds = geo.userData.seeds;
+      mat.size = params.particleSize;
+      const totalP = pos.length / 3;
+      const noiseTime = time * 0.15;
 
-    // ── Subject particles ──
-    const seeds = geo.userData.seeds;
-    const fb = params.feedback;
-    const baseLerp = Math.max(0.005, 0.04 + turb * 0.03 - fb * 0.03);
-    const oct = params.octaves + surgeAmount * 0.5;
-    const swParam = swirl;
-
-    for (let i = 0; i < pos.length / 3; i++) {
+    for (let i = 0; i < totalP; i++) {
       const i3 = i * 3;
+
+      // ALL particles lerp toward target every frame
+      pos[i3]   += (tgt[i3]   - pos[i3])   * lerpRate;
+      pos[i3+1] += (tgt[i3+1] - pos[i3+1]) * lerpRate;
+      pos[i3+2] += (tgt[i3+2] - pos[i3+2]) * lerpRate;
+
+      // Recompute target for 1/3 of particles per frame (amortized for perf)
+      if ((i + frameCount) % 3 !== 0) continue;
+
       const bx = base[i3], by = base[i3+1], bz = base[i3+2];
       const ep = edgeProx ? edgeProx[i] : 0.5;
-      const strength = turb * (0.1 + ep * 0.9);
-
-      const sx = seeds ? seeds[i3] : i * 0.1;
-      const sy = seeds ? seeds[i3+1] : i * 0.2;
+      const sx = seeds ? seeds[i3] : 0;
       const freqMul = seeds ? seeds[i3+2] : 1;
-      const t = time * 0.25 * freqMul;
+      const t = noiseTime * freqMul;
+      const strength = surge * (0.3 + ep * 0.7);
 
-      // Octave 1: low freq
-      let nx = noise3D(bx * 1.2 + sx, by * 1.2, t) * strength * 0.5;
-      let ny = noise3D(bx * 1.2 + sy, by * 1.2 + sy, t + 33) * strength * 0.5;
-      let nz = noise3D(bx * 1.2 + 50, by * 1.2 + 50, t + 66) * strength * 0.3;
+      if (surge > 0.01) {
+        // Curl noise — divergence-free fluid flow
+        const freq = 0.8;
+        const [cx, cy, cz] = curlNoise(
+          bx * freq + sx * 0.01 + t,
+          by * freq + t * 0.7,
+          bz * freq + t * 0.3
+        );
 
-      // Octave 2: mid freq
-      nx += noise3D(bx * 4.5 + sx, by * 4.5, t * 2) * strength * 0.35 * oct;
-      ny += noise3D(bx * 4.5 + sy, by * 4.5 + sy, t * 2 + 33) * strength * 0.35 * oct;
-      nz += noise3D(bx * 4.5 + 50, by * 4.5 + 50, t * 2 + 66) * strength * 0.2 * oct;
+        // Vortex attractors — large-scale swirling streams
+        const [vx, vy, vz] = vortexForce(pos[i3], pos[i3+1], pos[i3+2]);
 
-      // Octave 3: high freq
-      nx += noise3D(bx * 10 + sx, by * 10, t * 3.5) * strength * 0.2 * oct * oct;
-      ny += noise3D(bx * 10 + sy, by * 10 + sy, t * 3.5 + 33) * strength * 0.2 * oct * oct;
-      nz += noise3D(bx * 10 + 50, by * 10 + 50, t * 3.5 + 66) * strength * 0.15 * oct * oct;
+        const curlStr = strength * 0.4;
+        const vortStr = strength * 0.6;
 
-      // Swirl
-      const swAmt = strength * swParam * 0.6;
-      const swFreq = 0.4 + swParam * 0.4;
-      const swx = Math.sin(time * swFreq * freqMul + sy + by * 3) * swAmt;
-      const swy = Math.cos(time * swFreq * freqMul + sx + bx * 3) * swAmt;
-      const curl = swParam * strength * 0.15;
-      const cx = Math.sin(time * 0.2 + bx * 5 + by * 3) * curl;
-      const cy = Math.cos(time * 0.2 + by * 5 + bx * 3) * curl;
+        tgt[i3]   = bx + cx * curlStr + vx * vortStr;
+        tgt[i3+1] = by + cy * curlStr + vy * vortStr;
+        tgt[i3+2] = bz + cz * curlStr * 0.5 + vz * vortStr * 0.5;
+      } else {
+        tgt[i3]   = bx;
+        tgt[i3+1] = by;
+        tgt[i3+2] = bz;
+      }
 
-      const tx = bx + nx + swx + cx;
-      const ty = by + ny + swy + cy;
-      const tz = bz + nz;
-
-      pos[i3]   += (tx - pos[i3]) * baseLerp;
-      pos[i3+1] += (ty - pos[i3+1]) * baseLerp;
-      pos[i3+2] += (tz - pos[i3+2]) * baseLerp;
+      // Convergence arc — spiral back along curves when reforming
+      if (surge < 0.8 && surge > 0.01) {
+        const rx = bx - pos[i3], ry = by - pos[i3+1], rz = bz - pos[i3+2];
+        const rDist = Math.sqrt(rx*rx + ry*ry + rz*rz);
+        if (rDist > 0.01) {
+          const arcStr = (1 - surge) * rDist * 0.3;
+          const spiralSign = (sx > 50) ? 1 : -1;
+          const px = -rz, pz = rx;
+          const pLen = Math.sqrt(px*px + pz*pz) || 1;
+          tgt[i3]   += (px / pLen) * arcStr * spiralSign;
+          tgt[i3+2] += (pz / pLen) * arcStr * spiralSign * 0.5;
+        }
+      }
     }
     geo.attributes.position.needsUpdate = true;
+    } // end if (hasSubject)
 
-    // ── Cage sphere: organic rotation + flowing surface movement ──
+    // ── Cage sphere: steady growth animation ──
+    const deltaTime = time - lastAnimTime;
+    let effectiveSpeed = params.cageSpeed;
+
+    if (cageAnimActive) {
+      const elapsed = time - cageAnimStartTime;
+
+      // Phase 1 (0-2s): fade in at a fixed small size (slightly bigger than the dot)
+      // Phase 2 (2-20s): grow from that size to mature
+      if (elapsed < 3) {
+        // Fade in — hold at small scale, opacity ramps very slowly
+        const fadeT = elapsed / 3;
+        const fadeEased = fadeT * fadeT * fadeT; // ease-in cubic (very slow start)
+        cr.cagePoints.scale.set(0.08, 0.08, 0.08);
+        cr.cageMat.size = 0.0003 + fadeEased * 0.002;
+        cr.cageMat.opacity = fadeEased * 0.15;
+        cageGeo.setDrawRange(0, Math.floor(10 + 200 * fadeEased));
+        effectiveSpeed = 3;
+      } else {
+        // Grow from small to mature
+        const growT = Math.min((elapsed - 3) / 17, 1);
+        const eased = growT < 0.5
+          ? 4 * growT * growT * growT
+          : 1 - Math.pow(-2 * growT + 2, 3) / 2;
+
+        const cageScale = 0.08 + 0.92 * eased;
+        cr.cagePoints.scale.set(cageScale, cageScale, cageScale);
+        cr.cageMat.size = 0.0023 + (params.cageSize - 0.0023) * eased;
+        cr.cageMat.opacity = 0.15 + (params.cageOpacity - 0.15) * eased;
+        effectiveSpeed = params.cageSpeed + (3 - params.cageSpeed) * (1 - eased);
+
+        const visibleCount = Math.floor(210 + (CAGE_COUNT - 210) * eased);
+        cageGeo.setDrawRange(0, visibleCount);
+      }
+    } else {
+      cageGeo.setDrawRange(0, CAGE_COUNT);
+    }
+    cageRotAngle += deltaTime * effectiveSpeed;
+
     const cPos = cageGeo.attributes.position.array;
     const cBase = cageGeo.userData.basePos;
     const cNormals = cageGeo.userData.normals;
     const cSeeds = cageGeo.userData.seeds;
     const cColors = cageGeo.attributes.color.array;
-    const rotAngle = time * params.cageSpeed;
-    const cosR = Math.cos(rotAngle), sinR = Math.sin(rotAngle);
-    // Slow secondary tilt for organic feel
+    const cosR = Math.cos(cageRotAngle), sinR = Math.sin(cageRotAngle);
     const tiltAngle = Math.sin(time * 0.07) * 0.15;
     const cosT = Math.cos(tiltAngle), sinT = Math.sin(tiltAngle);
     const totalCage = cPos.length / 3;
@@ -1140,6 +1169,7 @@ function animateParticles() {
 
     renderer.render(scene, camera);
   }
+  lastAnimTime = time;
 }
 animateParticles();
 
@@ -1149,121 +1179,10 @@ function placeImage(imageData, mimeType, col, row, depthMap, depthMimeType) {
   const cell = cellElements[key];
   const dot = dotElements[key];
 
-  const existing = cell.querySelector('.cell-image');
-  if (existing) existing.remove();
-  const existingCvs = cell.querySelector('.cell-particles');
-  if (existingCvs) existingCvs.remove();
-  if (cellRenderers[key]) {
-    cellRenderers[key].renderer.dispose();
-    delete cellRenderers[key];
-  }
-
-  // Green-screen removal with feathering
-  const tempImg = new Image();
-  tempImg.onload = () => {
-    const cvs = document.createElement('canvas');
-    const ctx = cvs.getContext('2d');
-    cvs.width = tempImg.width;
-    cvs.height = tempImg.height;
-    ctx.drawImage(tempImg, 0, 0);
-    const px = ctx.getImageData(0, 0, cvs.width, cvs.height);
-    const d = px.data;
-    const w = cvs.width;
-    const h = cvs.height;
-
-    // Pass 1: compute green-screen mask (0 = bg, 1 = subject)
-    const mask = new Float32Array(w * h);
-    for (let i = 0; i < d.length; i += 4) {
-      const r = d[i], g = d[i+1], b = d[i+2];
-      const greenness = g - Math.max(r, b);
-      const ratio = g / (r + g + b + 1);
-      // Very aggressive: catch soft greens too
-      if ((greenness > 15 && ratio > 0.34) || (g > 100 && greenness > 10 && ratio > 0.38)) {
-        mask[i / 4] = 0;
-      } else {
-        mask[i / 4] = 1;
-      }
-    }
-
-    // Pass 2: compute distance from edge for dissolve
-    // Quick distance field: how far each pixel is from a mask=0 pixel
-    const edgeDist = new Float32Array(w * h);
-    const dissolveRadius = 30; // max dissolve reach in pixels
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        if (mask[y * w + x] === 0) { edgeDist[y * w + x] = 0; continue; }
-        let minD = dissolveRadius;
-        const sr = Math.min(dissolveRadius, 15); // search radius (capped for perf)
-        for (let r = 1; r <= sr; r++) {
-          let found = false;
-          for (let dy = -r; dy <= r; dy++) {
-            for (let dx = -r; dx <= r; dx++) {
-              if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
-              const nx2 = x + dx, ny2 = y + dy;
-              if (nx2 >= 0 && nx2 < w && ny2 >= 0 && ny2 < h) {
-                if (mask[ny2 * w + nx2] === 0) { minD = r; found = true; break; }
-              }
-            }
-            if (found) break;
-          }
-          if (found) break;
-        }
-        edgeDist[y * w + x] = minD;
-      }
-    }
-
-    // Pass 3: noise dissolve + feather + despill
-    const dissolve = params.dissolve;
-    const dissolveDepth = Math.max(1, dissolve * dissolveRadius);
-    for (let i = 0; i < d.length; i += 4) {
-      const pi = i / 4;
-      const x = pi % w, y = Math.floor(pi / w);
-      let a = mask[pi];
-
-      if (a > 0) {
-        const dist = edgeDist[pi];
-        if (dist < dissolveDepth) {
-          // Multi-octave noise for organic dissolve shape
-          const n1 = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-          const n2 = Math.sin(x * 4.176 + y * 23.451) * 17593.1234;
-          const n3 = Math.sin(x * 7.531 + y * 51.892) * 32145.7891;
-          const noiseVal = ((n1 - Math.floor(n1)) * 0.5
-            + (n2 - Math.floor(n2)) * 0.3
-            + (n3 - Math.floor(n3)) * 0.2);
-          // Edge factor: 1 at boundary, 0 at dissolveDepth
-          const edgeFactor = 1 - (dist / dissolveDepth);
-          // Dissolve: noise threshold decreases toward interior
-          if (noiseVal < edgeFactor) {
-            a = 0;
-          } else {
-            // Soft alpha falloff for non-dissolved edge pixels
-            a = Math.min(1, (noiseVal - edgeFactor) * 3);
-          }
-        }
-      }
-
-      d[i + 3] = Math.round(Math.max(0, Math.min(1, a)) * 255);
-      // Despill green
-      const maxRB = Math.max(d[i], d[i + 2]);
-      if (d[i + 1] > maxRB + 10) {
-        d[i + 1] = Math.round(maxRB + (d[i + 1] - maxRB) * 0.3);
-      }
-    }
-    ctx.putImageData(px, 0, 0);
-
-    const img = document.createElement('img');
-    img.className = 'cell-image';
-    img.src = cvs.toDataURL('image/png');
-    img.onload = () => {
-      img.classList.add('loaded');
-      createParticlesForCell(imageData, mimeType, cell, key, depthMap, depthMimeType);
-    };
-    cell.appendChild(img);
-  };
-  tempImg.src = `data:${mimeType};base64,${imageData}`;
+  // Add subject particles to the cage that was created at generation start
+  createParticlesForCell(imageData, mimeType, cell, key, depthMap, depthMimeType);
 
   storedImages[key] = { image: imageData, mimeType };
-
   dot.classList.add('filled');
   filledCells.add(key);
   promptElements[key].style.opacity = '0';
@@ -1317,7 +1236,18 @@ async function generateMemory(prompt) {
 
   const [col, row] = activeCellKey.split(',').map(Number);
 
+  // Create cage immediately and start growth animation
+  const cell = cellElements[activeCellKey];
+  initCageForCell(cell, activeCellKey);
+  cageAnimActive = true;
+  cageAnimStartTime = Date.now() * 0.001;
+
   promptElements[activeCellKey].style.opacity = '0';
+  // Position loading text above the active cell's center dot
+  const dot = dotElements[activeCellKey];
+  const dotRect = dot.getBoundingClientRect();
+  loadingText.style.top = `${dotRect.top - 24}px`;
+  loadingText.style.left = `${dotRect.left + dotRect.width / 2}px`;
   loadingText.classList.add('active');
   textInput.classList.add('hidden');
 
