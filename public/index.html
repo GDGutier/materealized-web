@@ -51,38 +51,70 @@
     /* ── PROMPT LABEL inside cell ── */
     .cell-prompt {
       position: absolute;
-      top: 42%;
+      bottom: 58%;
       left: 50%;
-      transform: translate(-50%, -100%);
-      font-size: 1.05rem;
+      transform: translateX(-50%);
+      width: calc(var(--cell-size) * 0.47);
+      max-height: calc(0.75rem * 1.4 * 5); /* 5 lines max */
+      overflow-y: auto;
+      font-size: 0.75rem;
       font-weight: 300;
-      color: rgba(255, 255, 255, 0.65);
+      color: rgba(255, 255, 255, 0.5);
       letter-spacing: 0.01em;
-      white-space: nowrap;
+      line-height: 1.4;
+      text-align: center;
+      white-space: normal;
+      word-wrap: break-word;
       z-index: 3;
-      pointer-events: none;
+      pointer-events: auto;
       transition: opacity 0.4s ease;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
     }
 
-    /* ── DOTS ── */
+    .cell-prompt::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .cell-prompt::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+    }
+
+    /* ── PLUS SIGNS (zoomed out) / DOTS (zoomed in) ── */
     .cell-dot {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
       transform: translate(-50%, -50%);
       z-index: 2;
-      transition: opacity 0.4s ease, background 0.4s ease;
+      transition: opacity 0.4s ease, color 0.4s ease;
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 80px;
+      font-weight: 200;
+      color: rgba(255, 255, 255, 0.2);
+      line-height: 1;
+      width: auto; height: auto;
+      background: none;
+      border-radius: 0;
     }
 
+    .cell-dot::before {
+      content: '+';
+    }
+
+    /* Center/zoomed-in state: small dot */
     .cell-dot.center {
+      font-size: 0;
       width: 8px;
       height: 8px;
+      border-radius: 50%;
       background: rgba(255, 255, 255, 0.9);
       cursor: pointer;
+    }
+
+    .cell-dot.center::before {
+      content: none;
     }
 
     .cell-dot.center::after {
@@ -102,28 +134,29 @@
       50% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
     }
 
+    /* Active neighbor: large pulsing plus sign */
     .cell-dot.active {
-      background: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.5);
       cursor: pointer;
-      animation: neighborPulse 3s ease-in-out infinite;
+      animation: plusPulse 3s ease-in-out infinite;
     }
 
     .cell-dot.active:hover {
-      background: rgba(255, 255, 255, 0.9);
+      color: rgba(255, 255, 255, 0.9);
     }
 
-    @keyframes neighborPulse {
+    @keyframes plusPulse {
       0%, 100% { opacity: 0.3; }
       50% { opacity: 0.85; }
     }
 
     .cell-dot.recording {
-      background: #ff3333 !important;
+      color: #ff3333 !important;
       animation: recordBlink 1.2s ease-in-out infinite !important;
     }
 
     .cell-dot.recording::after {
-      background: rgba(255, 50, 50, 0.08) !important;
+      background: rgba(255, 50, 50, 0.06) !important;
       animation: dotPulseRed 1.5s ease-in-out infinite !important;
     }
 
@@ -166,29 +199,7 @@
     #hover-label.visible { opacity: 1; }
     #hover-label.red { color: #ff3333; }
 
-    /* ── LOADING ── */
-    #loading-text {
-      position: fixed;
-      left: 50%;
-      transform: translate(-50%, 0);
-      font-size: 0.7rem;
-      font-weight: 300;
-      color: rgba(255, 255, 255, 0.4);
-      letter-spacing: 0.12em;
-      z-index: 60;
-      display: none;
-      pointer-events: none;
-    }
-
-    #loading-text.active {
-      display: block;
-      animation: loadPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes loadPulse {
-      0%, 100% { opacity: 0.2; }
-      50% { opacity: 0.7; }
-    }
+    /* Loading text removed */
 
     #status {
       position: fixed;
@@ -202,38 +213,62 @@
       z-index: 60;
     }
 
-    #text-input {
-      position: fixed;
-      bottom: 48px;
+    .cell-input {
+      position: absolute;
+      top: 55%;
       left: 50%;
       transform: translateX(-50%);
-      width: min(420px, 80vw);
-      padding: 10px 16px;
+      width: 30%;
+      padding: 6px 0;
       font-family: 'Inter', -apple-system, sans-serif;
-      font-size: 0.85rem;
+      font-size: 0.55rem;
       font-weight: 300;
       letter-spacing: 0.04em;
       color: rgba(255, 255, 255, 0.85);
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 6px;
+      background: none;
+      border: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 0;
       outline: none;
-      z-index: 60;
-      transition: border-color 0.3s ease, opacity 0.3s ease;
+      z-index: 5;
+      opacity: 0;
+      pointer-events: none;
+      text-align: center;
+      transition: opacity 0.4s ease;
     }
 
-    #text-input::placeholder {
-      color: rgba(255, 255, 255, 0.25);
+    .cell-input.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .cell-input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
       font-weight: 300;
     }
 
-    #text-input:focus {
-      border-color: rgba(255, 255, 255, 0.3);
+    .cell-input:focus {
+      border-bottom-color: rgba(255, 255, 255, 0.35);
     }
 
-    #text-input.hidden {
-      opacity: 0;
-      pointer-events: none;
+    #back-btn {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 2.4rem;
+      font-weight: 200;
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      display: none;
+      transition: color 0.2s ease;
+      user-select: none;
+    }
+
+    #back-btn:hover {
+      color: rgba(255, 255, 255, 0.9);
     }
 
   </style>
@@ -256,9 +291,8 @@
 </script>
 
 
+<div id="back-btn">&times;</div>
 <div id="hover-label">[ RECORD ]</div>
-<div id="loading-text">materializing...</div>
-<input id="text-input" type="text" placeholder="type a memory and press enter..." autocomplete="off" />
 <div id="status"></div>
 
 <script type="module">
@@ -395,11 +429,103 @@ const params = {
   poleDensity: 0.48,
 };
 
+// ── PARALLAX STATE ──
+let parallaxX = 0; // -1 to 1
+let parallaxY = 0; // -1 to 1
+let parallaxTargetX = 0;
+let parallaxTargetY = 0;
+let faceTrackingActive = false;
+
+// Mouse parallax
+window.addEventListener('mousemove', (e) => {
+  if (!faceTrackingActive) {
+    parallaxTargetX = (e.clientX / window.innerWidth - 0.5) * 2;
+    parallaxTargetY = (e.clientY / window.innerHeight - 0.5) * 2;
+  }
+});
+
+// ── WEBCAM FACE TRACKING (MediaPipe) ──
+async function initFaceTracking() {
+  try {
+    // Dynamically load MediaPipe Tasks Vision
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.js';
+    script.crossOrigin = 'anonymous';
+    document.head.appendChild(script);
+    await new Promise((res, rej) => { script.onload = res; script.onerror = rej; });
+
+    const { FaceDetector, FilesetResolver } = window;
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'
+    );
+    const detector = await FaceDetector.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+        delegate: 'GPU',
+      },
+      runningMode: 'VIDEO',
+    });
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 320, height: 240, facingMode: 'user' }
+    });
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.style.display = 'none';
+    document.body.appendChild(video);
+    await video.play();
+    faceTrackingActive = true;
+
+    const track = () => {
+      if (!faceTrackingActive) return;
+      try {
+        const result = detector.detectForVideo(video, performance.now());
+        if (result.detections.length > 0) {
+          // Keypoint 2 = nose tip (normalized 0-1)
+          const nose = result.detections[0].keypoints[2];
+          if (nose) {
+            parallaxTargetX = -(nose.x - 0.5) * 3;
+            parallaxTargetY = (nose.y - 0.5) * 2;
+          }
+        }
+      } catch(e) {}
+      setTimeout(track, 100); // 10fps detection
+    };
+    track();
+  } catch(e) {
+    console.log('Face tracking unavailable:', e.message || e);
+    faceTrackingActive = false;
+  }
+}
+// Defer camera request to first user interaction
+let faceTrackingInitialized = false;
+document.addEventListener('click', () => {
+  if (!faceTrackingInitialized) {
+    faceTrackingInitialized = true;
+    initFaceTracking();
+  }
+}, { once: false });
+
 // ── CAGE ANIMATION STATE ──
 let cageAnimActive = false;
 let cageAnimStartTime = 0;
 let cageRotAngle = 0;
 let lastAnimTime = Date.now() * 0.001;
+
+// ── DIRECTIONAL MERGE STATE ──
+let directionalVortex = null;
+let incomingSphere = null; // visible sphere entering from direction
+let incomingSphereStart = 0;
+
+// Direction to 3D offset mapping (in scene coordinates)
+const DIR_OFFSETS = {
+  '1,0': { x: 0, y: 3 },    // above → up
+  '1,2': { x: 0, y: -3 },   // below → down
+  '0,1': { x: -3, y: 0 },   // left
+  '2,1': { x: 3, y: 0 },    // right
+};
 
 const COLS = 3;
 const ROWS = 3;
@@ -412,6 +538,20 @@ const filledCells = new Set();
 let activeCellKey = `${CENTER_COL},${CENTER_ROW}`;
 let isGenerating = false;
 let isRecording = false;
+
+// ── SCENE STATE ──
+let sceneDescription = ''; // cumulative text of what's in the scene
+let sceneImage = null;     // current center image base64
+let sceneMimeType = null;  // current center image mime
+let initialPrompt = '';    // the very first item the user described
+
+// Directional labels (cardinal only, no diagonals)
+const DIRECTION_LABELS = {
+  '1,0': { label: 'Above', spatial: 'above' },
+  '0,1': { label: 'To the left of', spatial: 'to the left of' },
+  '2,1': { label: 'To the right of', spatial: 'to the right of' },
+  '1,2': { label: 'Below', spatial: 'below' },
+};
 
 // Pan/zoom
 let scale = 1;
@@ -428,28 +568,13 @@ const viewport = document.getElementById('viewport');
 const world = document.getElementById('world');
 const grid = document.getElementById('grid');
 const hoverLabel = document.getElementById('hover-label');
-const loadingText = document.getElementById('loading-text');
 const statusEl = document.getElementById('status');
-const textInput = document.getElementById('text-input');
-
-textInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const text = textInput.value.trim();
-    if (text && !isGenerating && !isRecording) {
-      textInput.value = '';
-      generateMemory(text);
-    }
-  }
-});
-
-// Don't let typing trigger pan/zoom
-textInput.addEventListener('mousedown', (e) => e.stopPropagation());
-textInput.addEventListener('wheel', (e) => e.stopPropagation());
 
 // ── BUILD GRID ──
 const cellElements = {};
 const dotElements = {};
 const promptElements = {};
+const inputElements = {}; // per-cell text inputs
 
 for (let row = 0; row < ROWS; row++) {
   for (let col = 0; col < COLS; col++) {
@@ -467,17 +592,41 @@ for (let row = 0; row < ROWS; row++) {
 
     if (col === CENTER_COL && row === CENTER_ROW) {
       dot.classList.add('center');
-      prompt.textContent = 'What do you remember about your home?';
+      prompt.textContent = 'Describe an item from your home.';
       prompt.style.opacity = '1';
     } else {
       // Hide dots on non-center cells until activated as neighbors
       dot.style.display = 'none';
     }
 
+    // Text input inside cell — below the dot
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'cell-input';
+    input.placeholder = 'speak or type your memory...';
+    input.autocomplete = 'off';
+
+    // Enter key handler
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const text = input.value.trim();
+        if (text && !isGenerating && !isRecording) {
+          input.value = '';
+          const savedDirection = activeDirection;
+          if (activeDirection) returnToOverview();
+          activeDirection = savedDirection;
+          generateMemory(text);
+        }
+      }
+    });
+    input.addEventListener('mousedown', (e) => e.stopPropagation());
+
     cell.appendChild(prompt);
     cell.appendChild(dot);
+    cell.appendChild(input);
     grid.appendChild(cell);
     cellElements[key] = cell;
+    inputElements[key] = input;
     dotElements[key] = dot;
     promptElements[key] = prompt;
   }
@@ -502,8 +651,18 @@ function applyTransform() {
     `translate(${panX}px, ${panY}px) scale(${scale})`;
 }
 
-// Start zoomed into center
+// Helper: show/hide active cell's input
+function showActiveInput() {
+  const inp = inputElements[activeCellKey];
+  if (inp) inp.classList.add('active');
+}
+function hideAllInputs() {
+  Object.values(inputElements).forEach(inp => inp.classList.remove('active'));
+}
+
+// Start zoomed into center with input visible
 centerView(CENTER_COL, CENTER_ROW, 2.5, false);
+showActiveInput();
 
 // ── DOT INTERACTION ──
 // Use a single click handler approach to avoid duplicates
@@ -536,12 +695,13 @@ function setupDotInteraction(dot, key) {
     e.stopPropagation();
     if (isGenerating) return;
 
-    if (key !== activeCellKey) {
-      navigateToCell(key);
-    } else if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
+    if (key === activeCellKey) {
+      // Center dot: toggle recording
+      if (isRecording) stopRecording();
+      else startRecording();
+    } else if (DIRECTION_LABELS[key]) {
+      // Directional dot: activate input for this direction
+      activateDirectionalInput(key);
     }
   });
 }
@@ -550,47 +710,159 @@ setupDotInteraction(
   dotElements[activeCellKey], activeCellKey
 );
 
-// ── NAVIGATE TO CELL ──
-function navigateToCell(key) {
-  const [col, row] = key.split(',').map(Number);
+// ── BACK BUTTON ──
+const backBtn = document.getElementById('back-btn');
+backBtn.addEventListener('click', () => {
+  returnToOverview();
+});
 
-  // Hide old prompt
-  promptElements[activeCellKey].style.opacity = '0';
+function returnToOverview() {
+  const centerKey = `${CENTER_COL},${CENTER_ROW}`;
 
-  // Remove center from old dot
-  dotElements[activeCellKey].classList.remove(
-    'center', 'recording'
-  );
+  // Reset active cell to center
+  if (activeCellKey !== centerKey) {
+    const oldDot = dotElements[activeCellKey];
+    oldDot.classList.remove('center');
+  }
+  activeCellKey = centerKey;
 
-  // Deactivate all
-  Object.values(dotElements).forEach(d => {
-    d.classList.remove('active');
+  // Restore center dot
+  const centerDot = dotElements[centerKey];
+  centerDot.classList.add('center');
+
+  // Zoom out to see all directions
+  centerView(CENTER_COL, CENTER_ROW, 1.3, true);
+
+  // Reset all prompt positions and re-show directional dots
+  Object.keys(DIRECTION_LABELS).forEach(k => {
+    promptElements[k].style.bottom = ''; // reset to CSS default (58%)
   });
+  activateNeighbors(CENTER_COL, CENTER_ROW);
 
-  // Set new active
-  activeCellKey = key;
-  const newDot = dotElements[key];
-  newDot.classList.add('center');
+  // Hide back button
+  backBtn.style.display = 'none';
 
-  // Setup interaction (no-op if already set up)
-  setupDotInteraction(newDot, key);
-
-  // Zoom in
-  centerView(col, row, 2.5, true);
-
-  // Show prompt in this cell
-  const prompt = promptElements[key];
-  prompt.textContent = 'What was in this space?';
-  setTimeout(() => { prompt.style.opacity = '1'; }, 800);
+  // Reset direction state
+  activeDirection = null;
+  hideAllInputs();
 }
 
-// ── ACTIVATE NEIGHBORS ──
+// ── DIRECTIONAL INPUT ──
+let activeDirection = null;
+
+// ── TRIGGER DIRECTIONAL MERGE ──
+function triggerDirectionalMerge(dirKey) {
+  const offset = DIR_OFFSETS[dirKey] || { x: 0, y: 0 };
+  const centerKey = `${CENTER_COL},${CENTER_ROW}`;
+  const cr = cellRenderers[centerKey];
+
+  // Add a strong temporary vortex at the direction
+  directionalVortex = {
+    posX: offset.x * 0.8,
+    posY: offset.y * 0.8,
+    posZ: 0,
+    strength: 1.2,
+    axisX: -offset.y,
+    axisY: offset.x,
+    axisZ: 0.5,
+    startTime: Date.now() * 0.001,
+    duration: 15,
+  };
+  const len = Math.sqrt(directionalVortex.axisX**2 + directionalVortex.axisY**2 + directionalVortex.axisZ**2) || 1;
+  directionalVortex.axisX /= len;
+  directionalVortex.axisY /= len;
+  directionalVortex.axisZ /= len;
+
+  // Spawn visible incoming sphere
+  if (cr && cr.scene) {
+    if (incomingSphere) {
+      cr.scene.remove(incomingSphere);
+      incomingSphere.geometry.dispose();
+      incomingSphere.material.dispose();
+    }
+    const count = 3000;
+    const rad = 0.6;
+    const sPos = new Float32Array(count * 3);
+    const sCols = new Float32Array(count * 3);
+    const sBase = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const phi = Math.acos(1 - 2 * Math.random());
+      const theta = Math.random() * Math.PI * 2;
+      const r = rad * (0.8 + Math.random() * 0.2);
+      const i3 = i * 3;
+      sBase[i3] = Math.sin(phi)*Math.cos(theta)*r;
+      sBase[i3+1] = Math.cos(phi)*r;
+      sBase[i3+2] = Math.sin(phi)*Math.sin(theta)*r;
+      sPos[i3] = sBase[i3]; sPos[i3+1] = sBase[i3+1]; sPos[i3+2] = sBase[i3+2];
+      const b = 0.4 + Math.random() * 0.4;
+      sCols[i3] = b; sCols[i3+1] = b; sCols[i3+2] = b;
+    }
+    const sGeo = new THREE.BufferGeometry();
+    sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+    sGeo.setAttribute('color', new THREE.BufferAttribute(sCols, 3));
+    sGeo.userData = { basePos: sBase };
+    const sMat = new THREE.PointsMaterial({
+      size: 0.005, vertexColors: true, transparent: true,
+      opacity: 0, sizeAttenuation: true,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    incomingSphere = new THREE.Points(sGeo, sMat);
+    incomingSphere.position.set(offset.x, offset.y, 0);
+    incomingSphere.scale.set(0.1, 0.1, 0.1);
+    cr.scene.add(incomingSphere);
+    incomingSphereStart = Date.now() * 0.001;
+  }
+}
+
+function activateDirectionalInput(key) {
+  activeDirection = key;
+  const dirInfo = DIRECTION_LABELS[key];
+  if (!dirInfo) return;
+  const [col, row] = key.split(',').map(Number);
+
+  // Switch plus to dot: add center class, remove active
+  const dot = dotElements[key];
+  dot.classList.remove('active');
+  dot.classList.add('center');
+
+  // Hide other directional dots
+  Object.keys(DIRECTION_LABELS).forEach(k => {
+    if (k !== key) {
+      dotElements[k].style.display = 'none';
+      dotElements[k].classList.remove('active');
+      promptElements[k].style.opacity = '0';
+    }
+  });
+
+  // Update prompt — center aligned with gap above the dot
+  const prompt = promptElements[key];
+  const subject = sceneDescription || initialPrompt || 'this';
+  prompt.textContent = `${dirInfo.label} the ${subject} I remember...`;
+  prompt.style.bottom = '58%'; // larger gap above dot
+  prompt.style.opacity = '1';
+
+  // Zoom into this cell and show back button
+  centerView(col, row, 2.5, true);
+  backBtn.style.display = 'block';
+
+  // Setup interaction so clicking the dot records
+  activeCellKey = key;
+  setupDotInteraction(dot, key);
+
+  // Show text input below the zoomed-in dot
+  // Show input for this cell
+  hideAllInputs();
+  const inp = inputElements[key];
+  if (inp) {
+    inp.placeholder = 'speak or type your memory...';
+    inp.classList.add('active');
+    setTimeout(() => inp.focus(), 800);
+  }
+}
+
+// ── ACTIVATE NEIGHBORS (cardinal only) ──
 function activateNeighbors(col, row) {
-  const dirs = [
-    [-1,-1],[-1,0],[-1,1],
-    [0,-1],        [0,1],
-    [1,-1], [1,0], [1,1]
-  ];
+  const dirs = [[0,-1], [-1,0], [1,0], [0,1]]; // up, left, right, down
   for (const [dc, dr] of dirs) {
     const nc = col + dc;
     const nr = row + dr;
@@ -598,17 +870,25 @@ function activateNeighbors(col, row) {
       const nk = `${nc},${nr}`;
       if (!filledCells.has(nk)) {
         const dot = dotElements[nk];
-        dot.style.display = ''; // show the dot
+        dot.style.display = '';
         dot.classList.add('active');
         dot.style.animationDelay = `${Math.random() * 2}s`;
         setupDotInteraction(dot, nk);
+
+        // Set directional label text (hidden until user zooms in)
+        const dirInfo = DIRECTION_LABELS[nk];
+        if (dirInfo) {
+          const prompt = promptElements[nk];
+          const subject = sceneDescription || initialPrompt || 'this';
+          prompt.textContent = `${dirInfo.label} the ${subject} I remember...`;
+          prompt.style.opacity = '0'; // hidden in main view, shown on zoom
+        }
       }
     }
   }
 }
 
-// ── STORED IMAGES (for context passing) ──
-const storedImages = {};
+// Scene images stored in sceneImage/sceneMimeType (module-level state)
 
 // ── PARTICLE RENDERERS ──
 const cellRenderers = {};
@@ -672,7 +952,7 @@ function initCageForCell(cell, key) {
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
   camera.position.set(0, 0, 5);
 
   // Build cage — same code as before
@@ -865,11 +1145,7 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
       const points = new THREE.Points(geo, mat);
       scene.add(points);
 
-      // Update existing cellRenderer entry with subject particles
-      const cr = cellRenderers[key];
-      cr.points = points;
-      cr.mat = mat;
-      cr.geo = geo;
+      // Will be set in morph/fresh logic below
 
       // Store rebuild function for subject particles
       geo.userData.rebuildSubject = () => {
@@ -918,22 +1194,55 @@ function createParticlesForCell(imageData, mimeType, cell, key, depthData, depth
         geo.attributes.color.needsUpdate = true;
       };
 
-      // No DOM image to clean up — particles only
+      // Check if this is a morph (existing particles being updated)
+      const existingCr = cellRenderers[key];
+      const isMorph = existingCr && existingCr.geo && existingCr.mat;
 
-      // Start scattered, coalesce into form
-      triggerCoalesce();
+      if (isMorph) {
+        // MORPH: swap base positions and colors while particles are dispersed
+        const oldGeo = existingCr.geo;
+        oldGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        oldGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        oldGeo.userData.basePos = basePos;
+        oldGeo.userData.edgeProx = edgeProxArr;
+        oldGeo.userData.seeds = seeds;
+        oldGeo.userData.targetPos = targetPos;
+        oldGeo.userData.baseColors = new Float32Array(colors);
+        oldGeo.userData.lastDesat = 0;
+        oldGeo.attributes.position.needsUpdate = true;
+        oldGeo.attributes.color.needsUpdate = true;
 
-      // End cage growth animation — snap to full size
-      cageAnimActive = false;
-      cagePoints.scale.set(1, 1, 1);
+        // Remove the newly created Points (we reused the old one's data)
+        scene.remove(points);
 
-      const fadeIn = () => {
-        if (mat.opacity < 1.0) {
-          mat.opacity += 0.01;
-          requestAnimationFrame(fadeIn);
-        }
-      };
-      fadeIn();
+        // Quick spin burst before settling, then ease particles in
+        surgeDecay = 0.012; // slightly faster convergence for snappy feel
+
+        // Cage stays as-is (no growth animation needed for morph)
+      } else {
+        // FRESH: first generation
+        const cr = cellRenderers[key];
+        cr.points = points;
+        cr.mat = mat;
+        cr.geo = geo;
+
+        triggerCoalesce();
+
+        // End cage growth animation — snap to full size
+        cageAnimActive = false;
+        cagePoints.scale.set(1, 1, 1);
+        cageMat.size = params.cageSize;
+        cageMat.opacity = params.cageOpacity;
+        cageGeo.setDrawRange(0, CAGE_COUNT);
+
+        const fadeIn = () => {
+          if (mat.opacity < 1.0) {
+            mat.opacity += 0.01;
+            requestAnimationFrame(fadeIn);
+          }
+        };
+        fadeIn();
+      }
     };
 
     if (depthData) {
@@ -969,6 +1278,10 @@ function animateParticles() {
   const time = Date.now() * 0.001;
   frameCount++;
 
+  // Smooth parallax
+  parallaxX += (parallaxTargetX - parallaxX) * 0.05;
+  parallaxY += (parallaxTargetY - parallaxY) * 0.05;
+
   // Surge tracks dispersion slider
   const sliderTarget = params.dispersion;
   if (surgeAmount > sliderTarget) {
@@ -988,6 +1301,13 @@ function animateParticles() {
 
     // Subject particles may not exist yet (cage-only during generation)
     const hasSubject = geo && mat && geo.userData.basePos && geo.userData.targetPos;
+
+    // Apply parallax to subject Points only (not cage)
+    if (cr.points) {
+      cr.points.rotation.y = parallaxX * 0.15;
+      cr.points.rotation.x = -parallaxY * 0.1;
+    }
+
     if (hasSubject) {
       const pos = geo.attributes.position.array;
       const base = geo.userData.basePos;
@@ -1025,15 +1345,49 @@ function animateParticles() {
           bz * freq + t * 0.3
         );
 
-        // Vortex attractors — large-scale swirling streams
-        const [vx, vy, vz] = vortexForce(pos[i3], pos[i3+1], pos[i3+2]);
+        // Vortex attractors — boosted during high surge for more swirls
+        let [vx, vy, vz] = vortexForce(pos[i3], pos[i3+1], pos[i3+2]);
+        const swirlBoost = 1 + surge * 1.5; // up to 2.5x vortex during full surge
+        vx *= swirlBoost; vy *= swirlBoost; vz *= swirlBoost;
 
-        const curlStr = strength * 0.4;
-        const vortStr = strength * 0.6;
+        // Directional vortex — temporary pull from incoming direction
+        let dvx = 0, dvy = 0, dvz = 0;
+        if (directionalVortex) {
+          const dv = directionalVortex;
+          const elapsed = time - dv.startTime;
+          const decay = Math.max(0, 1 - elapsed / dv.duration);
+          const dx = pos[i3] - dv.posX, dy = pos[i3+1] - dv.posY, dz = pos[i3+2] - dv.posZ;
+          const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.01;
+          const core = 0.5;
+          const spd = dist < core ? dv.strength * dist / core : dv.strength * core / dist;
+          const tx = dv.axisY*dz - dv.axisZ*dy;
+          const ty = dv.axisZ*dx - dv.axisX*dz;
+          const tz = dv.axisX*dy - dv.axisY*dx;
+          const tLen = Math.sqrt(tx*tx + ty*ty + tz*tz) || 1;
+          dvx = (tx/tLen) * spd * decay;
+          dvy = (ty/tLen) * spd * decay;
+          dvz = (tz/tLen) * spd * decay;
+          if (decay <= 0) directionalVortex = null;
+        }
 
-        tgt[i3]   = bx + cx * curlStr + vx * vortStr;
-        tgt[i3+1] = by + cy * curlStr + vy * vortStr;
-        tgt[i3+2] = bz + cz * curlStr * 0.5 + vz * vortStr * 0.5;
+        const curlStr = strength * 0.25;
+        const vortStr = strength * 0.75;
+
+        let tx2 = bx + cx * curlStr + (vx + dvx) * vortStr;
+        let ty2 = by + cy * curlStr + (vy + dvy) * vortStr;
+        let tz2 = bz + cz * curlStr * 0.5 + (vz + dvz) * vortStr * 0.5;
+
+        // Soft clamp — keep particles within viewable area
+        const maxR = 2.3;
+        const r = Math.sqrt(tx2*tx2 + ty2*ty2 + tz2*tz2);
+        if (r > maxR) {
+          const s = maxR / r;
+          tx2 *= s; ty2 *= s; tz2 *= s;
+        }
+
+        tgt[i3]   = tx2;
+        tgt[i3+1] = ty2;
+        tgt[i3+2] = tz2;
       } else {
         tgt[i3]   = bx;
         tgt[i3+1] = by;
@@ -1055,6 +1409,29 @@ function animateParticles() {
       }
     }
     geo.attributes.position.needsUpdate = true;
+
+    // Desaturate toward white when dispersed, restore original colors when reforming
+    // Uses baseColors (stored on userData) as source of truth
+    if (!geo.userData.baseColors) {
+      geo.userData.baseColors = new Float32Array(geo.attributes.color.array);
+    }
+    const colors = geo.attributes.color.array;
+    const baseColors = geo.userData.baseColors;
+    const desat = Math.min(1, Math.max(0, (surge - 0.2) * 1.25));
+    if (desat > 0 || geo.userData.lastDesat > 0) {
+      for (let i = 0; i < totalP; i++) {
+        if ((i + frameCount) % 5 !== 0) continue;
+        const i3 = i * 3;
+        const br = baseColors[i3], bg = baseColors[i3+1], bb = baseColors[i3+2];
+        // Lerp between original color and white
+        colors[i3]   = br + (0.85 - br) * desat;
+        colors[i3+1] = bg + (0.85 - bg) * desat;
+        colors[i3+2] = bb + (0.85 - bb) * desat;
+      }
+      geo.attributes.color.needsUpdate = true;
+      geo.userData.lastDesat = desat;
+    }
+
     } // end if (hasSubject)
 
     // ── Cage sphere: steady growth animation ──
@@ -1094,7 +1471,72 @@ function animateParticles() {
     } else {
       cageGeo.setDrawRange(0, CAGE_COUNT);
     }
+    // Spin cage fast during generation to look like it's swirling particles
+    if (directionalVortex) {
+      const dvElapsed = time - directionalVortex.startTime;
+      const dvDecay = Math.max(0, 1 - dvElapsed / directionalVortex.duration);
+      effectiveSpeed = Math.max(effectiveSpeed, 1.8 * dvDecay + 0.5);
+    } else if (surgeAmount > 0.5) {
+      effectiveSpeed = Math.max(effectiveSpeed, 1.0 + surgeAmount * 0.8);
+    }
     cageRotAngle += deltaTime * effectiveSpeed;
+
+    // ── Incoming sphere animation ──
+    if (incomingSphere) {
+      const sElapsed = time - incomingSphereStart;
+      const sDur = 10;
+      const st = Math.min(sElapsed / sDur, 1);
+      const sEased = st < 0.5 ? 4*st*st*st : 1 - Math.pow(-2*st+2, 3)/2;
+
+      // Grow and move toward center
+      const sScale = 0.1 + 0.4 * sEased;
+      incomingSphere.scale.set(sScale, sScale, sScale);
+      const startX = incomingSphere.userData?.startX ?? incomingSphere.position.x;
+      const startY = incomingSphere.userData?.startY ?? incomingSphere.position.y;
+      if (!incomingSphere.userData) incomingSphere.userData = {};
+      incomingSphere.userData.startX = startX;
+      incomingSphere.userData.startY = startY;
+      incomingSphere.position.x = startX * (1 - sEased);
+      incomingSphere.position.y = startY * (1 - sEased);
+
+      // Opacity: fade in then dissolve
+      const sOp = st < 0.4 ? (st/0.4)*0.5 : 0.5*(1-(st-0.4)/0.6);
+      incomingSphere.material.opacity = Math.max(0, sOp);
+      incomingSphere.material.size = 0.005 + sEased * 0.008;
+
+      // Same curl noise + vortex as subject particles — they interact
+      const sPos = incomingSphere.geometry.attributes.position.array;
+      const sBaseArr = incomingSphere.geometry.userData.basePos;
+      if (sBaseArr) {
+        const nt = time * 0.2;
+        // World position of sphere (for vortex interaction)
+        const wx = incomingSphere.position.x;
+        const wy = incomingSphere.position.y;
+        for (let j = 0; j < sPos.length / 3; j++) {
+          const j3 = j * 3;
+          const bx = sBaseArr[j3], by = sBaseArr[j3+1], bz = sBaseArr[j3+2];
+          // Curl noise (same field as center particles)
+          const [ncx, ncy, ncz] = curlNoise(
+            (bx+wx)*0.8+nt, (by+wy)*0.8+nt*0.7, bz*0.8+nt*0.3
+          );
+          // Vortex forces (in world space, transformed to local)
+          const [fvx, fvy, fvz] = vortexForce(bx*sScale+wx, by*sScale+wy, bz*sScale);
+          const ns = 0.3 + sEased * 0.5;
+          sPos[j3]   = bx + ncx*ns + fvx*ns*0.4;
+          sPos[j3+1] = by + ncy*ns + fvy*ns*0.4;
+          sPos[j3+2] = bz + ncz*ns*0.5 + fvz*ns*0.2;
+        }
+        incomingSphere.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Cleanup when done
+      if (st >= 1) {
+        cr.scene.remove(incomingSphere);
+        incomingSphere.geometry.dispose();
+        incomingSphere.material.dispose();
+        incomingSphere = null;
+      }
+    }
 
     const cPos = cageGeo.attributes.position.array;
     const cBase = cageGeo.userData.basePos;
@@ -1130,27 +1572,24 @@ function animateParticles() {
       const rz2 = ry * sinT + rz * cosT;
       ry = ry2; rz = rz2;
 
-      // Organic surface flow — particles drift along the surface
-      const flowT = time * 0.12 * spdMul;
-      const flowX = Math.sin(flowT + s0 + ry * 3) * stream * 0.08;
-      const flowY = Math.sin(flowT * 0.7 + s1 + rx * 4) * stream * 0.06;
-      const flowZ = Math.cos(flowT * 0.9 + s2 + ry * 2) * stream * 0.08;
+      // Subtle surface wandering — particles drift organically on the sphere
+      const wt = time * 0.1 * spdMul;
+      const wanderX = Math.sin(wt + s0 + ry * 2.5) * 0.025
+                     + Math.sin(wt * 1.7 + s1) * 0.015;
+      const wanderY = Math.cos(wt * 0.8 + s1 + rx * 3) * 0.02
+                     + Math.sin(wt * 2.1 + s2) * 0.012;
+      const wanderZ = Math.sin(wt * 1.3 + s2 + by * 2) * 0.02;
 
-      // Radial breathing — per-particle phase for organic look
+      // Radial breathing — per-particle phase
       const breathPhase = s0 * 0.5 + s1 * 0.3;
       const breathe = 1
-        + Math.sin(time * 0.2 * spdMul + breathPhase) * 0.03
-        + Math.sin(time * 0.08 + s2) * 0.015;
+        + Math.sin(time * 0.25 * spdMul + breathPhase) * 0.035
+        + Math.sin(time * 0.1 + s2) * 0.02
+        + Math.sin(time * 0.6 + s0 * 0.7) * 0.008; // fast micro-pulse
 
-      // Clump drift — particles near each other drift together
-      const clumpDrift = clump * 0.04;
-      const cx = Math.sin(s0 * 0.3 + time * 0.05) * clumpDrift;
-      const cy = Math.cos(s1 * 0.3 + time * 0.04) * clumpDrift;
-      const cz = Math.sin(s2 * 0.3 + time * 0.06) * clumpDrift;
-
-      cPos[i3]   = (rx + flowX + cx) * breathe;
-      cPos[i3+1] = (ry + flowY + cy) * breathe;
-      cPos[i3+2] = (rz + flowZ + cz) * breathe;
+      cPos[i3]   = (rx + wanderX) * breathe;
+      cPos[i3+1] = (ry + wanderY) * breathe;
+      cPos[i3+2] = (rz + wanderZ) * breathe;
 
       // Fresnel: edge bright, center very dim — strong silhouette
       const rnx = cNormals[i3] * cosR + cNormals[i3+2] * sinR;
@@ -1182,36 +1621,12 @@ function placeImage(imageData, mimeType, col, row, depthMap, depthMimeType) {
   // Add subject particles to the cage that was created at generation start
   createParticlesForCell(imageData, mimeType, cell, key, depthMap, depthMimeType);
 
-  storedImages[key] = { image: imageData, mimeType };
   dot.classList.add('filled');
   filledCells.add(key);
   promptElements[key].style.opacity = '0';
 }
 
 // ── COLLECT ADJACENT IMAGES ──
-function getAdjacentImages(col, row) {
-  const adjacent = [];
-  const labels = {
-    '-1,-1': 'top-left', '0,-1': 'above',
-    '1,-1': 'top-right', '-1,0': 'left',
-    '1,0': 'right', '-1,1': 'bottom-left',
-    '0,1': 'below', '1,1': 'bottom-right',
-  };
-  for (const [offsets, position] of Object.entries(labels)) {
-    const [dc, dr] = offsets.split(',').map(Number);
-    const nc = col + dc;
-    const nr = row + dr;
-    const nk = `${nc},${nr}`;
-    if (storedImages[nk]) {
-      adjacent.push({
-        position,
-        image: storedImages[nk].image,
-        mimeType: storedImages[nk].mimeType,
-      });
-    }
-  }
-  return adjacent;
-}
 
 // ── CLOUD FUNCTION ──
 let functionUrl = '';
@@ -1230,37 +1645,74 @@ async function detectFunctionUrl() {
 detectFunctionUrl();
 
 // ── GENERATE ──
-async function generateMemory(prompt) {
+async function generateMemory(userInput) {
   if (isGenerating) return;
   isGenerating = true;
 
-  const [col, row] = activeCellKey.split(',').map(Number);
+  const centerKey = `${CENTER_COL},${CENTER_ROW}`;
+  const [col, row] = [CENTER_COL, CENTER_ROW];
+  const cell = cellElements[centerKey];
+  const isDirectional = activeDirection !== null;
+  const dirInfo = isDirectional ? DIRECTION_LABELS[activeDirection] : null;
 
-  // Create cage immediately and start growth animation
-  const cell = cellElements[activeCellKey];
-  initCageForCell(cell, activeCellKey);
-  cageAnimActive = true;
-  cageAnimStartTime = Date.now() * 0.001;
+  // Build the prompt for Gemini
+  let fullPrompt;
+  if (!isDirectional) {
+    // First generation — just the item
+    initialPrompt = userInput;
+    sceneDescription = userInput;
+    fullPrompt = userInput;
+  } else {
+    // Directional addition — combine with scene context
+    const newElement = userInput;
+    const spatialRelation = dirInfo.spatial;
+    fullPrompt = `A scene showing: ${sceneDescription}, with ${newElement} ${spatialRelation} it. ` +
+      `Show all elements together in one cohesive scene.`;
+    sceneDescription += `, with ${newElement} ${spatialRelation}`;
+  }
 
-  promptElements[activeCellKey].style.opacity = '0';
-  // Position loading text above the active cell's center dot
-  const dot = dotElements[activeCellKey];
-  const dotRect = dot.getBoundingClientRect();
-  loadingText.style.top = `${dotRect.top - 24}px`;
-  loadingText.style.left = `${dotRect.left + dotRect.width / 2}px`;
-  loadingText.classList.add('active');
-  textInput.classList.add('hidden');
+  // If directional: disperse center particles + spawn merge cage
+  if (isDirectional && cellRenderers[centerKey] && cellRenderers[centerKey].geo) {
+    surgeAmount = 1;
+    surgeDecay = 0; // stay fully dispersed until API returns
+    triggerDirectionalMerge(activeDirection);
+  }
+
+  // Initial generation: create cage with growth animation
+  // Directional: keep existing cage at full size
+  if (!isDirectional) {
+    initCageForCell(cell, centerKey);
+    cageAnimActive = true;
+    cageAnimStartTime = Date.now() * 0.001;
+  }
+
+  // Snap to wide view, hide all labels and directional dots
+  centerView(CENTER_COL, CENTER_ROW, 1.3, true);
+  backBtn.style.display = 'none';
+  promptElements[centerKey].style.opacity = '0';
+  Object.keys(DIRECTION_LABELS).forEach(k => {
+    promptElements[k].style.opacity = '0';
+    dotElements[k].style.display = 'none';
+  });
+  hideAllInputs();
 
   try {
     if (!functionUrl) await detectFunctionUrl();
 
+    // Build request — include current scene image for directional additions
+    const requestBody = { prompt: fullPrompt };
+    if (isDirectional && sceneImage) {
+      requestBody.adjacentImages = [{
+        position: 'current scene',
+        image: sceneImage,
+        mimeType: sceneMimeType,
+      }];
+    }
+
     const res = await fetch(functionUrl, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        prompt,
-        adjacentImages: getAdjacentImages(col, row),
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!res.ok) {
@@ -1270,24 +1722,30 @@ async function generateMemory(prompt) {
     }
 
     const data = await res.json();
-    placeImage(data.image, data.mimeType, col, row, data.depthMap, data.depthMimeType);
-    loadingText.classList.remove('active');
 
-    // Zoom out, show neighbors
+    // Store scene image for next iteration
+    sceneImage = data.image;
+    sceneMimeType = data.mimeType;
+
+    // Place in center cell (morph if directional)
+    placeImage(data.image, data.mimeType, col, row, data.depthMap, data.depthMimeType);
+
+    // Zoom out, show directional neighbors
     setTimeout(() => {
-      centerView(col, row, 0.85, true);
+      centerView(col, row, 1.3, true);
       setTimeout(() => activateNeighbors(col, row), 1000);
     }, 600);
 
     statusEl.textContent = '';
+    activeDirection = null;
   } catch (err) {
     statusEl.textContent = err.message;
-    loadingText.classList.remove('active');
-    promptElements[activeCellKey].style.opacity = '1';
+    promptElements[centerKey].style.opacity = '1';
     console.error(err);
+    activeDirection = null;
   } finally {
     isGenerating = false;
-    textInput.classList.remove('hidden');
+    // Don't show input in overview — only when zoomed into a dot
   }
 }
 
@@ -1336,7 +1794,7 @@ function startRecording() {
     return;
   }
   isRecording = true;
-  textInput.classList.add('hidden');
+  hideAllInputs();
   const dot = dotElements[activeCellKey];
   dot.classList.add('recording');
   dot.style.opacity = '';
@@ -1356,54 +1814,33 @@ function stopRecording() {
   dot.classList.remove('recording');
   hoverLabel.className = '';
   dot.style.opacity = '';
-  textInput.classList.remove('hidden');
+  showActiveInput();
 
   const transcript =
     promptElements[activeCellKey].textContent;
+  const wasDirectional = DIRECTION_LABELS[activeCellKey];
+
   if (transcript && transcript !== 'Listening...') {
+    // Save direction before snapping back
+    const savedDirection = activeDirection;
+    if (wasDirectional) returnToOverview();
+    activeDirection = savedDirection;
     setTimeout(() => generateMemory(transcript), 300);
   } else {
-    promptElements[activeCellKey].textContent =
-      'What do you remember about your home?';
+    // Restore the appropriate prompt text
+    const dirInfo = DIRECTION_LABELS[activeCellKey];
+    if (dirInfo) {
+      const subject = sceneDescription || initialPrompt || 'this';
+      promptElements[activeCellKey].textContent =
+        `${dirInfo.label} the ${subject} I remember...`;
+    } else {
+      promptElements[activeCellKey].textContent =
+        'Describe an item from your home.';
+    }
   }
 }
 
-// ── PAN & ZOOM ──
-viewport.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const factor = e.deltaY > 0 ? 0.92 : 1.08;
-  const newScale = Math.max(0.2, Math.min(5, scale * factor));
-  const mx = e.clientX;
-  const my = e.clientY;
-  panX = mx - (mx - panX) * (newScale / scale);
-  panY = my - (my - panY) * (newScale / scale);
-  scale = newScale;
-  world.style.transition = 'none';
-  applyTransform();
-}, {passive: false});
-
-viewport.addEventListener('mousedown', (e) => {
-  if (e.target.classList.contains('cell-dot')) return;
-  isPanning = true;
-  panStartX = e.clientX;
-  panStartY = e.clientY;
-  startPanX = panX;
-  startPanY = panY;
-  viewport.style.cursor = 'grabbing';
-});
-
-window.addEventListener('mousemove', (e) => {
-  if (!isPanning) return;
-  panX = startPanX + (e.clientX - panStartX);
-  panY = startPanY + (e.clientY - panStartY);
-  world.style.transition = 'none';
-  applyTransform();
-});
-
-window.addEventListener('mouseup', () => {
-  isPanning = false;
-  viewport.style.cursor = '';
-});
+// Pan/zoom disabled — navigation via dots only
 
 window.addEventListener('resize', () => {
   const [col, row] = activeCellKey.split(',').map(Number);
